@@ -1,5 +1,5 @@
 import streamlit as st
-from core.loader import load_csv, load_excel, load_json
+from core.loader import load_dataset
 from core.state_manager import set_dataset
 from core.profiling import get_missing_values, get_duplicates, get_summary_stats, get_inferred_dtypes
 
@@ -9,14 +9,11 @@ st.write("Upload your dataset to begin.")
 uploaded_file = st.file_uploader("Upload your dataset", type=["csv", "xlsx", "json"])
 
 if uploaded_file is not None:
-    df = None
-
-    if uploaded_file.name.endswith(".csv"):
-        df = load_csv(uploaded_file)
-    elif uploaded_file.name.endswith(".xlsx"):
-        df = load_excel(uploaded_file)
-    elif uploaded_file.name.endswith(".json"):
-        df = load_json(uploaded_file)
+    try:
+        df = load_dataset(uploaded_file)
+    except Exception as e:
+        st.error(e)
+        df = None
     
     if df is not None:
         set_dataset(df)
