@@ -8,7 +8,8 @@ def init_manager():
         "df": None,           # The active working dataframe
         "original_df": None,  # The pristine backup
         "history": [],        # List of dataframes for Undo
-        "recipe_log": []      # List of operations performed
+        "recipe_log": [],     # List of operations performed
+        "uploader_key": 0     # Key to force reset the file uploader
     }
     for key, default in keys.items():
         if key not in st.session_state:
@@ -59,3 +60,10 @@ def reset_dataset():
         save_dataset(st.session_state["original_df"])
         return True
     return False
+
+def kill_session():
+    """Completely clears the session state and forces UI widgets to reset."""
+    current_key = st.session_state.get("uploader_key", 0)
+    st.session_state.clear()
+    # Increment the key to force the file uploader to render as a brand new widget
+    st.session_state["uploader_key"] = current_key + 1

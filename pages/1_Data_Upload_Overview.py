@@ -11,7 +11,8 @@ from services.dataset_manager import (
     store_dataset,
     get_dataset,
     dataset_exists,
-    init_manager
+    init_manager,
+    kill_session
 )
 
 # 1. Initialize state
@@ -22,7 +23,8 @@ st.title("📂 Data Upload & Overview")
 # 2. Upload Section
 uploaded_file = st.file_uploader(
     "Upload your dataset (CSV, Excel, or JSON)",
-    type=["csv", "xlsx", "json"]
+    type=["csv", "xlsx", "json"],
+    key=f"uploader_{st.session_state.get('uploader_key', 0)}"
 )
 
 if uploaded_file is not None:
@@ -39,9 +41,17 @@ if dataset_exists():
     df = get_dataset()
     
     st.divider()
+
+    col1, col2 = st.columns([0.80, 0.20])
+    with col1:
+        st.subheader("🔍 Dataset Preview")
+    with col2:
+        with st.expander("🗑️ Reset Session", expanded=False):
+            st.warning("Are you sure? This will delete all uploaded data and clear your session.")
+            if st.button("Yes, I am sure", type="primary", width="stretch"):
+                kill_session()
+                st.rerun()
     
-    # 4. Dataset Preview
-    st.subheader("🔍 Dataset Preview")
     # Using .astype(str) for the first few rows to prevent Arrow serialization errors in the UI
     st.dataframe(df.head(5).astype(str), use_container_width=True)
     
