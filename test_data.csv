@@ -1,0 +1,8 @@
+id,name,age,salary,join_date,department
+1,John Doe,28,50000,2022-01-15,Sales
+2,Jane Smith,34,60000,2021-06-10,Marketing
+3,Bob Johnson,,75000,2020-11-20,IT
+4,Alice Williams,22,45000,,Sales
+5,Charlie Brown,30,52000,2023-01-01,IT
+6,John Doe,28,50000,2022-01-15,Sales
+7,Dirty Value,N/A,$1,000,2022-05-05,Other
