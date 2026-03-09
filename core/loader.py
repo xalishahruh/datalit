@@ -1,4 +1,10 @@
-"""
-Handles loading datasets from different sources.
-Implemented in Milestone 2.
-"""
+import pandas as pd
+
+def load_csv (file):
+    return pd.read_csv(file)
+
+def load_excel (file):
+    return pd.read_excel(file)
+
+def load_json (file):
+    return pd.read_json(file)
