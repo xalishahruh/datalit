@@ -9,12 +9,12 @@ def _load_csv(file):
         file.seek(0)
         return pd.read_csv(file, on_bad_lines="skip", encoding="ISO-8859-1", low_memory=False)
 
-def load_dataset(file):
+def load_dataset(file, file_type):
     """
-    Intelligently loads a dataset based on its file extension.
-    Uses a dispatch mapping for efficient selection of the loader function.
+    Intelligently loads a dataset based on the provided file_type.
     """
-    ext = os.path.splitext(file.name)[1].lower()
+    # Normalize file_type
+    ext = f".{file_type.lower()}" if not file_type.startswith(".") else file_type.lower()
     
     # Mapping of extensions to loading functions
     loaders = {
@@ -27,12 +27,11 @@ def load_dataset(file):
     loader_func = loaders.get(ext)
     
     if not loader_func:
-        raise ValueError(f"The format '{ext}' is not supported. Please use CSV, Excel, or JSON.")
+        raise ValueError(f"The format '{file_type}' is not supported. Please use CSV, Excel, or JSON.")
 
     try:
-        if loader_func == _load_csv: # Special case for fallback logic
-            return loader_func(file)
         return loader_func(file)
     except Exception as e:
-        raise Exception(f"Error processing {file.name}: {str(e)}")
+        raise Exception(f"Error processing the {file_type} file: {str(e)}")
+
 

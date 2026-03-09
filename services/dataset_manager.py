@@ -14,7 +14,7 @@ def init_manager():
         if key not in st.session_state:
             st.session_state[key] = default
 
-def save_dataset(df, name="Initial Upload"):
+def store_dataset(df, name="Initial Upload"):
     """
     Sets a new dataset and resets the history/logs.
     Used during initial file upload.

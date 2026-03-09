@@ -1,13 +1,14 @@
 import streamlit as st
 from core.loader import load_dataset
 from core.profiling import (
-    get_inferred_dtypes,
-    get_missing_values,
-    get_duplicates,
-    get_summary_stats
+    infer_dtypes,
+    missing_values,
+    duplicate_count,
+    numeric_summary,
+    categorical_summary
 )
 from services.dataset_manager import (
-    save_dataset,
+    store_dataset,
     get_dataset,
     dataset_exists,
     init_manager
@@ -26,9 +27,9 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
     try:
-        # Load and store only if new file
-        df = load_dataset(uploaded_file)
-        save_dataset(df)
+        file_type = uploaded_file.name.split(".")[-1]
+        df = load_dataset(uploaded_file, file_type)
+        store_dataset(df)
         st.success(f"Successfully loaded '{uploaded_file.name}'")
     except Exception as e:
         st.error(f"Failed to load dataset: {e}")
@@ -39,44 +40,45 @@ if dataset_exists():
     
     st.divider()
     
-    # 3.1 Dataset Preview
+    # 4. Dataset Preview
     st.subheader("🔍 Dataset Preview")
     # Using .astype(str) for the first few rows to prevent Arrow serialization errors in the UI
-    st.dataframe(df.head(10).astype(str), use_container_width=True)
+    st.dataframe(df.head(5).astype(str), use_container_width=True)
     
-    # 3.2 Structure
+    # 5. Dataset Structure
+    st.subheader("📋 Dataset Structure")
     rows, cols = df.shape
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Total Rows", rows)
-    with col2:
-        st.metric("Total Columns", cols)
+    st.write(f"**Rows:** {rows}")
+    st.write(f"**Columns:** {cols}")
+    st.write(f"**Column Names:** {list(df.columns)}")
 
-    # 3.3 Data Profiles
-    tab1, tab2, tab3 = st.tabs(["🧬 Data Types", "🩹 Missing Values", "📊 Stats Summary"])
-    
-    with tab1:
-        st.subheader("Inferred Data Types")
-        st.dataframe(get_inferred_dtypes(df), use_container_width=True)
+    # 6. Inferred Data Types
+    st.subheader("🧬 Inferred Data Types")
+    st.dataframe(infer_dtypes(df), use_container_width=True)
 
-    with tab2:
-        st.subheader("Missing Values Analysis")
-        st.dataframe(get_missing_values(df), use_container_width=True)
-        st.write(f"**Duplicate Rows Found:** {get_duplicates(df)}")
+    # 7. Missing Values
+    st.subheader("🩹 Missing Values by Column")
+    st.dataframe(missing_values(df), use_container_width=True)
 
-    with tab3:
-        num_sum, cat_sum = get_summary_stats(df)
-        
-        st.subheader("Numeric Summary")
-        if not num_sum.empty:
-            st.dataframe(num_sum, use_container_width=True)
-        else:
-            st.info("No numeric columns available.")
+    # 8. Duplicate Rows
+    st.subheader("👯 Duplicate Rows")
+    st.write(duplicate_count(df))
+
+    # 9. Numeric Summary
+    st.subheader("🔢 Numeric Summary Statistics")
+    n_sum = numeric_summary(df)
+    if not n_sum.empty:
+        st.dataframe(n_sum, use_container_width=True)
+    else:
+        st.info("No numeric columns available.")
             
-        st.subheader("Categorical Summary")
-        if not cat_sum.empty:
-            st.dataframe(cat_sum, use_container_width=True)
-        else:
-            st.info("No categorical columns available.")
+    # 10. Categorical Summary
+    st.subheader("🔡 Categorical Summary Statistics")
+    c_sum = categorical_summary(df)
+    if not c_sum.empty:
+        st.dataframe(c_sum, use_container_width=True)
+    else:
+        st.info("No categorical columns available.")
 else:
     st.info("Please upload a file to begin your analysis.")
+
