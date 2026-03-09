@@ -8,7 +8,8 @@ st.set_page_config(
 )
 
 # Initialize session variables
-init_session()
+from services.dataset_manager import init_manager
+init_manager()
 apply_custom_styles()
 
 st.title("DataLit – Data Preparation Studio")
