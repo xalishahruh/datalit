@@ -1,1 +1,3 @@
-# Placeholder for core/validation.py
+"""
+Validation functions for safe transformations.
+"""

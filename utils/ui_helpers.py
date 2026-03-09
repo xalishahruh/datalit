@@ -1,1 +1,3 @@
-# Placeholder for utils/ui_helpers.py
+"""
+Reusable UI components for Streamlit pages.
+"""

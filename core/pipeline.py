@@ -1,1 +1,8 @@
-# Placeholder for core/pipeline.py
+"""
+Stores transformation pipeline steps.
+
+Used for:
+- transformation history
+- reproducibility
+- exporting recipe
+"""

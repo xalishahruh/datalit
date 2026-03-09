@@ -1,5 +1,6 @@
 import streamlit as st
 from utils.session_manager import init_session
+from utils.ui_utils import apply_custom_styles
 
 st.set_page_config(
     page_title="DataLit – Data Preparation Studio",
@@ -8,6 +9,7 @@ st.set_page_config(
 
 # Initialize session variables
 init_session()
+apply_custom_styles()
 
 st.title("DataLit – Data Preparation Studio")
 

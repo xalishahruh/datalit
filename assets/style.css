@@ -1,72 +1,7 @@
-/* DataLit Custom Premium Styles */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@300;500;700&display=swap');
-
-html, body, [class*="st-"] {
-    font-family: 'Inter', sans-serif;
+h1 {
+    color: #2c3e50;
 }
 
-h1, h2, h3 {
-    font-family: 'Outfit', sans-serif;
-    background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 800;
-}
-
-.stButton>button {
-    border-radius: 12px;
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-    color: white;
-    border: none;
-    padding: 10px 24px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-}
-
-.stButton>button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
-    background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
-    color: white;
-}
-
-.stDataFrame {
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-}
-
-[data-testid="stSidebar"] {
-    background-color: #0f172a;
-    border-right: 1px solid #1e293b;
-}
-
-.stExpander {
-    border-radius: 12px !important;
-    border: 1px solid #e2e8f0 !important;
-    background: rgba(255, 255, 255, 0.05);
-    margin-bottom: base;
-}
-
-[data-testid="stMetricValue"] {
-    font-weight: 700;
-    color: #6366f1;
-}
-
-/* Glassmorphism effect for tabs */
-div[data-baseweb="tab-list"] {
-    background: rgba(255, 255, 255, 0.02);
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
-    padding: 5px;
-}
-
-/* Custom Alert Styling */
-.stAlert {
-    border-radius: 12px;
-    border: none !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+.sidebar .sidebar-content {
+    background-color: #f8f9fa;
 }

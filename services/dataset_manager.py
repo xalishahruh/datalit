@@ -1,1 +1,7 @@
-# Placeholder for services/dataset_manager.py
+"""
+Central dataset manager.
+
+Handles:
+- original dataset
+- transformed dataset
+"""

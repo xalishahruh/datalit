@@ -1,1 +1,3 @@
-# Placeholder for utils/cache_manager.py
+"""
+Streamlit caching utilities.
+"""
