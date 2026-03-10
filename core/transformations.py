@@ -16,17 +16,23 @@ def fill_constant(df, column, value):
     return df
 
 def fill_numeric(df, column, method):
-    if method == "mean":
-        val = df[column].mean()
-    elif method == "median":
-        val = df[column].median()
-    df[column] = df[column].fillna(val)
+        numeric_series = pd.to_numeric(df[column], errors="coerce")
+        if method == "mean":
+            val = numeric_series.mean()
+        elif method == "median":
+            val = numeric_series.median()
+        else:
+            raise ValueError("Method must be mean or median")
+        df[column] = numeric_series.fillna(val)
+        return df
+
+def fill_mode(df, column):
+    mode_value = df[column].mode()
+    if len(mode_value) == 0:
+        return df
+    df[column] = df[column].fillna(mode_value[0])
     return df
 
-def fill_categorical_mode(df, column):
-    mode = df[column].mode()[0]
-    df[column] = df[column].fillna(mode)
-    return df
 
 def fill_forward(df, column):
     df[column] = df[column].fillna(method="ffill")
@@ -61,8 +67,20 @@ def convert_to_numeric(df, column):
     return df
 
 def convert_to_datetime(df, column, fmt=None):
-    df[column] = pd.to_datetime(df[column], format=fmt, errors="coerce")
+    if fmt and fmt.strip() != "":
+        df[column] = pd.to_datetime(
+            df[column],
+            format=fmt,
+            errors="coerce"
+        )
+    else:
+        df[column] = pd.to_datetime(
+            df[column],
+            errors="coerce",
+            infer_datetime_format=True
+        )
     return df
+
 
 def convert_to_category(df, column):
     df[column] = df[column].astype("category")
