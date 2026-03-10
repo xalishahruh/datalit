@@ -61,7 +61,7 @@ def reset_dataset():
         return True
     return False
 
-def kill_session():
+def reset_session():
     """Completely clears the session state and forces UI widgets to reset."""
     current_key = st.session_state.get("uploader_key", 0)
     st.session_state.clear()

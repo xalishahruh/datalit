@@ -12,7 +12,7 @@ from services.dataset_manager import (
     get_dataset,
     dataset_exists,
     init_manager,
-    kill_session
+    reset_session
 )
 
 # 1. Initialize state
@@ -49,7 +49,7 @@ if dataset_exists():
         with st.expander("🗑️ Reset Session", expanded=False):
             st.warning("Are you sure? This will delete all uploaded data and clear your session.")
             if st.button("Yes, I am sure", type="primary", width="stretch"):
-                kill_session()
+                reset_session()
                 st.rerun()
     
     # Using .astype(str) for the first few rows to prevent Arrow serialization errors in the UI
