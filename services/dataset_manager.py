@@ -67,3 +67,6 @@ def reset_session():
     st.session_state.clear()
     # Increment the key to force the file uploader to render as a brand new widget
     st.session_state["uploader_key"] = current_key + 1
+
+def update_dataset(df):
+    st.session_state["df"] = df
