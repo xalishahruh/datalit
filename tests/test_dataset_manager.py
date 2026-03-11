@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import streamlit as st
 from services.dataset_manager import (
-    init_manager, set_dataset, get_dataset, add_transformation,
+    init_manager, store_dataset, get_dataset, add_transformation,
     undo_transformation, reset_dataset, reset_session, dataset_exists
 )
 
@@ -41,16 +41,15 @@ def test_init_manager():
     init_manager()
     assert getattr(st.session_state, "df", "missing") is None
     assert getattr(st.session_state, "original_df", "missing") is None
-    assert getattr(st.session_state, "pipeline", "missing") == []
-    assert getattr(st.session_state, "logs", "missing") == []
-    assert getattr(st.session_state, "recipe_log", "missing") == []
     assert getattr(st.session_state, "history", "missing") == []
+    assert getattr(st.session_state, "recipe_log", "missing") == []
+    assert getattr(st.session_state, "uploader_key", "missing") == 0
 
-def test_dataset_exists_and_set_dataset(sample_df):
+def test_dataset_exists_and_store_dataset(sample_df):
     init_manager()
     assert not dataset_exists()
     
-    set_dataset(sample_df)
+    store_dataset(sample_df)
     assert dataset_exists()
     
     # Check if loaded properly
@@ -60,7 +59,7 @@ def test_dataset_exists_and_set_dataset(sample_df):
     
 def test_add_transformation(sample_df):
     init_manager()
-    set_dataset(sample_df)
+    store_dataset(sample_df)
     
     # Create a modified dataframe
     new_df = sample_df.copy()
@@ -77,7 +76,7 @@ def test_add_transformation(sample_df):
 
 def test_undo_transformation(sample_df):
     init_manager()
-    set_dataset(sample_df)
+    store_dataset(sample_df)
     
     new_df = sample_df.copy()
     new_df["A"] = new_df["A"] * 2
@@ -95,7 +94,7 @@ def test_undo_transformation(sample_df):
 
 def test_reset_dataset(sample_df):
     init_manager()
-    set_dataset(sample_df)
+    store_dataset(sample_df)
     
     new_df = sample_df.copy()
     new_df["A"] = new_df["A"] * 2
@@ -108,10 +107,10 @@ def test_reset_dataset(sample_df):
 
 def test_reset_session(sample_df):
     init_manager()
-    set_dataset(sample_df)
+    store_dataset(sample_df)
     reset_session()
     
-    # Since init_manager gets called inside reset_session
-    assert getattr(st.session_state, "df") is None
-    assert getattr(st.session_state, "original_df") is None
-    assert len(getattr(st.session_state, "history")) == 0
+    # Session state is cleared, so 'df' and 'original_df' should not exist
+    assert getattr(st.session_state, "df", "missing") == "missing"
+    assert getattr(st.session_state, "original_df", "missing") == "missing"
+    assert getattr(st.session_state, "history", "missing") == "missing"

@@ -21,7 +21,7 @@ def test_drop_missing_rows(df_with_missing):
     assert cleaned.iloc[0]["A"] == 5.0
 
     # Drop missing rows considering only column A
-    cleaned_col_A = drop_missing_rows(df_with_missing, subset=["A"])
+    cleaned_col_A = drop_missing_rows(df_with_missing, ["A"])
     assert len(cleaned_col_A) == 4
 
 def test_drop_columns_by_threshold(df_with_missing):
@@ -38,12 +38,12 @@ def test_fill_constant(df_with_missing):
 
 def test_fill_numeric(df_with_missing):
     # Mean
-    cleaned_mean = fill_numeric(df_with_missing.copy(), "A", strategy="mean")
+    cleaned_mean = fill_numeric(df_with_missing.copy(), "A", "mean")
     assert cleaned_mean["A"].isna().sum() == 0
     assert cleaned_mean["A"].iloc[2] == 3.0  # (1+2+4+5)/4 = 3.0
 
     # Median
-    cleaned_median = fill_numeric(df_with_missing.copy(), "A", strategy="median")
+    cleaned_median = fill_numeric(df_with_missing.copy(), "A", "median")
     assert cleaned_median["A"].iloc[2] == 3.0 # median of 1, 2, 4, 5 is 3.0
 
 def test_fill_mode(df_with_missing):

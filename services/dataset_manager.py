@@ -57,7 +57,9 @@ def undo_transformation():
 def reset_dataset():
     """Wipes all changes and returns to the original file."""
     if st.session_state["original_df"] is not None:
-        save_dataset(st.session_state["original_df"])
+        st.session_state["df"] = st.session_state["original_df"].copy()
+        st.session_state["history"] = [st.session_state["original_df"].copy()]
+        st.session_state["recipe_log"] = []
         return True
     return False
 

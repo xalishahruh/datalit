@@ -33,6 +33,6 @@ def test_equal_width_bins(columns_df):
     assert len(binned["Price_bin"].unique()) <= 2
 
 def test_quantile_bins(columns_df):
-    binned = quantile_bins(columns_df, "Price", q=2)
+    binned = quantile_bins(columns_df, "Price", bins=2)
     assert "Price_bin" in binned.columns
     assert len(binned["Price_bin"].unique()) <= 2
