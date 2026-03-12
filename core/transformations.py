@@ -54,11 +54,11 @@ def remove_duplicates(df, subset=None, keep="first"):
 
 # Data Types
 def clean_numeric_strings(df, column):
+    """Remove currency symbols, commas, and spaces from numeric strings"""
     df[column] = (
         df[column]
         .astype(str)
-        .str.replace(",", "", regex=False)
-        .str.replace("$", "", regex=False)
+        .str.replace(r'[$,€,£,\s,]', '', regex=True)
     )
     return df
 
