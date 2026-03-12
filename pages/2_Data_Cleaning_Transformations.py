@@ -50,11 +50,12 @@ def show_transformation_page():
     df = get_dataset().copy()
     
     # Create tabs for different transformation categories
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "📊 Missing Values", 
         "🔄 Duplicates", 
         "🏷️ Categorical", 
         "🔢 Numeric", 
+        "📅 Data Types",
         "📏 Column Ops",
         "✅ Validation"
     ])
@@ -72,13 +73,40 @@ def show_transformation_page():
         show_numeric_tab(df)
     
     with tab5:
-        show_column_ops_tab(df)
+        show_datatype_tab(df)
     
     with tab6:
+        show_column_ops_tab(df)
+    
+    with tab7:
         show_validation_tab(df)
     
     # Show transformation log at the bottom
     show_transformation_log()
+
+def render_preview_metrics(df_before, df_after, affected_cols):
+    """Render before/after metrics for a transformation"""
+    st.markdown("#### 🔍 Transformation Preview")
+    c1, c2, c3 = st.columns(3)
+    
+    with c1:
+        st.metric("Rows Before", len(df_before))
+        st.metric("Rows After", len(df_after), delta=len(df_after) - len(df_before))
+    
+    with c2:
+        missing_before = df_before[affected_cols].isna().sum().sum() if affected_cols else df_before.isna().sum().sum()
+        missing_after = df_after[affected_cols].isna().sum().sum() if affected_cols else df_after.isna().sum().sum()
+        st.metric("Total Missing (Affected)", missing_before)
+        st.metric("Remaining Missing", missing_after, delta=int(missing_after - missing_before))
+        
+    with c3:
+        st.info(f"**Affected Columns:**\n{', '.join(affected_cols[:5])}{'...' if len(affected_cols) > 5 else ''}")
+
+    with st.expander("👀 View Data Sample (First 5 Rows)"):
+        st.markdown("**Before:**")
+        st.dataframe(df_before.head(5), use_container_width=True)
+        st.markdown("**After:**")
+        st.dataframe(df_after.head(5), use_container_width=True)
 
 def show_missing_values_tab(df):
     """🎯 Missing Values Handling"""
@@ -125,21 +153,24 @@ def show_missing_values_tab(df):
                         st.warning("Please select columns!")
                         return
                 
-                rows_before = len(df)
-                rows_after = len(new_df)
-                
-                if rows_before > rows_after:
-                    add_transformation(
-                        "Remove Missing Rows",
-                        {"option": remove_option, "columns": cols_to_check if cols_to_check else "all"},
-                        affected,
-                        new_df
-                    )
-                    
-                    st.success(f"✅ Removed {rows_before - rows_after} rows with missing values!")
-                    st.rerun()
-                else:
-                    st.info("ℹ️ No rows with missing values found!")
+                # Show preview before applying
+                st.session_state["temp_df"] = new_df
+                st.session_state["temp_affected"] = affected
+                st.session_state["temp_op"] = "Remove Missing Rows"
+                st.session_state["temp_params"] = {"option": remove_option, "columns": cols_to_check if cols_to_check else "all"}
+
+        if "temp_df" in st.session_state and st.session_state.get("temp_op") == "Remove Missing Rows":
+            render_preview_metrics(df, st.session_state["temp_df"], st.session_state["temp_affected"])
+            if st.button("Confirm Removal ✅", type="primary"):
+                add_transformation(
+                    st.session_state["temp_op"],
+                    st.session_state["temp_params"],
+                    st.session_state["temp_affected"],
+                    st.session_state["temp_df"]
+                )
+                del st.session_state["temp_df"]
+                st.success("✅ Transformation applied!")
+                st.rerun()
     
     with col2:
         st.markdown("#### 📝 Fill Missing Values")
@@ -457,25 +488,28 @@ def show_numeric_tab(df):
                 
                 if action == "Remove outliers":
                     new_df = remove_outliers(new_df, outlier_col)
-                    affected_count = len(df) - len(new_df)
                     op_name = "Remove Outliers"
                 elif action == "Cap outliers":
                     new_df = cap_outliers(new_df, outlier_col)
-                    affected_count = len(outliers_iqr)
                     op_name = "Cap Outliers"
-                else:
-                    affected_count = 0
                 
-                if affected_count > 0:
-                    add_transformation(
-                        op_name,
-                        {"column": outlier_col, "action": action},
-                        [outlier_col],
-                        new_df
-                    )
-                    
-                    st.success(f"✅ Treated {affected_count} outlier values!")
-                    st.rerun()
+                st.session_state["temp_df"] = new_df
+                st.session_state["temp_affected"] = [outlier_col]
+                st.session_state["temp_op"] = op_name
+                st.session_state["temp_params"] = {"column": outlier_col, "action": action}
+
+        if "temp_df" in st.session_state and "Outliers" in st.session_state.get("temp_op", ""):
+            render_preview_metrics(df, st.session_state["temp_df"], st.session_state["temp_affected"])
+            if st.button("Confirm Treatment ✅", type="primary"):
+                add_transformation(
+                    st.session_state["temp_op"],
+                    st.session_state["temp_params"],
+                    st.session_state["temp_affected"],
+                    st.session_state["temp_df"]
+                )
+                del st.session_state["temp_df"]
+                st.success("✅ Transformation applied!")
+                st.rerun()
         else:
             st.success("✅ No outliers detected!")
     
@@ -494,7 +528,7 @@ def show_numeric_tab(df):
             key="scale_method"
         )
         
-        if scale_cols and st.button("📊 Apply Scaling", use_container_width=True):
+        if scale_cols and st.button("📊 Preview Scaling", use_container_width=True):
             new_df = df.copy()
             
             if scale_method == "Min-Max Normalization":
@@ -504,15 +538,23 @@ def show_numeric_tab(df):
                 new_df = zscore_scale(new_df, scale_cols)
                 op_name = "Z-Score Scaling"
             
-            add_transformation(
-                op_name,
-                {"columns": scale_cols, "method": scale_method},
-                scale_cols,
-                new_df
-            )
-            
-            st.success(f"✅ Applied {scale_method} to {len(scale_cols)} columns!")
-            st.rerun()
+            st.session_state["temp_df"] = new_df
+            st.session_state["temp_affected"] = scale_cols
+            st.session_state["temp_op"] = op_name
+            st.session_state["temp_params"] = {"columns": scale_cols, "method": scale_method}
+
+        if "temp_df" in st.session_state and "Scaling" in st.session_state.get("temp_op", ""):
+            render_preview_metrics(df, st.session_state["temp_df"], st.session_state["temp_affected"])
+            if st.button("Confirm Scaling ✅", type="primary"):
+                add_transformation(
+                    st.session_state["temp_op"],
+                    st.session_state["temp_params"],
+                    st.session_state["temp_affected"],
+                    st.session_state["temp_df"]
+                )
+                del st.session_state["temp_df"]
+                st.success("✅ Transformation applied!")
+                st.rerun()
 
 def show_column_ops_tab(df):
     """📏 Column Operations"""
@@ -710,6 +752,64 @@ def show_validation_tab(df):
                 st.dataframe(violations, use_container_width=True)
             else:
                 st.success(f"✅ No null values in '{null_col}'!")
+
+def show_datatype_tab(df):
+    """📅 Datatype Conversion & Cleaning"""
+    st.markdown("### 📅 Datatype Conversion & Cleaning")
+    
+    col_to_convert = st.selectbox("Select column to convert:", df.columns, key="dt_col")
+    target_type = st.selectbox("Target Type:", ["Numeric (Clean)", "Datetime", "Categorical"], key="dt_type")
+    
+    if target_type == "Numeric (Clean)":
+        st.info("💡 This will remove currency symbols, commas, and spaces, then convert to numeric.")
+        if st.button("🔍 Preview Numeric Cleaning", use_container_width=True):
+            new_df = df.copy()
+            new_df = clean_numeric_strings(new_df, col_to_convert)
+            new_df[col_to_convert] = pd.to_numeric(new_df[col_to_convert], errors="coerce")
+            
+            st.session_state["temp_df"] = new_df
+            st.session_state["temp_affected"] = [col_to_convert]
+            st.session_state["temp_op"] = "Numeric Cleaning & Conversion"
+            st.session_state["temp_params"] = {"column": col_to_convert}
+
+    elif target_type == "Datetime":
+        parse_mode = st.radio("Parsing Mode:", ["Auto-detect", "Manual Format"], key="dt_parse_mode")
+        fmt = None
+        if parse_mode == "Manual Format":
+            fmt = st.text_input("Enter format (e.g., %Y-%m-%d):", key="dt_fmt")
+        
+        if st.button("🔍 Preview Datetime Parsing", use_container_width=True):
+            new_df = df.copy()
+            new_df = convert_to_datetime(new_df, col_to_convert, fmt)
+            
+            st.session_state["temp_df"] = new_df
+            st.session_state["temp_affected"] = [col_to_convert]
+            st.session_state["temp_op"] = "Datetime Conversion"
+            st.session_state["temp_params"] = {"column": col_to_convert, "format": fmt if fmt else "auto"}
+
+    elif target_type == "Categorical":
+        if st.button("🔍 Preview Category Conversion", use_container_width=True):
+            new_df = df.copy()
+            new_df = convert_to_category(new_df, col_to_convert)
+            
+            st.session_state["temp_df"] = new_df
+            st.session_state["temp_affected"] = [col_to_convert]
+            st.session_state["temp_op"] = "Category Conversion"
+            st.session_state["temp_params"] = {"column": col_to_convert}
+
+    # Common preview and confirm logic
+    if "temp_df" in st.session_state and target_type in st.session_state.get("temp_op", ""):
+        render_preview_metrics(df, st.session_state["temp_df"], st.session_state["temp_affected"])
+        if st.button("Confirm Conversion ✅", type="primary", use_container_width=True):
+            add_transformation(
+                st.session_state["temp_op"],
+                st.session_state["temp_params"],
+                st.session_state["temp_affected"],
+                st.session_state["temp_df"]
+            )
+            del st.session_state["temp_df"]
+            st.success("✅ Datatype updated!")
+            st.rerun()
 
 def show_transformation_log():
     """📝 Display transformation log"""
