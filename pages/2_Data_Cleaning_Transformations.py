@@ -2,10 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
-import matplotlib.pyplot as plt
-import seaborn as sns
 import json
-import openpyxl  # Make sure this is installed
+import openpyxl  
 
 # Import your existing modules - FIXED PATHS
 from core.categorical_tools import (
@@ -176,9 +174,17 @@ def show_missing_values_tab(df):
         st.markdown("#### 📝 Fill Missing Values")
         fill_col = st.selectbox("Select column:", df.columns, key="fill_col")
         
+        col_type = df[fill_col].dtype
+        if pd.api.types.is_numeric_dtype(col_type):
+            methods = ["Constant", "Mean", "Median", "Mode"]
+        elif pd.api.types.is_datetime64_any_dtype(col_type):
+            methods = ["Constant", "Forward Fill", "Backward Fill"]
+        else:
+            methods = ["Constant", "Mode (Most Frequent)"]
+            
         fill_method = st.selectbox(
             "Fill method:",
-            ["Constant", "Mean", "Median", "Mode", "Forward Fill", "Backward Fill"],
+            methods,
             key="fill_method"
         )
         
@@ -195,7 +201,7 @@ def show_missing_values_tab(df):
                         new_df = fill_numeric(new_df, fill_col, "mean")
                     elif fill_method == "Median":
                         new_df = fill_numeric(new_df, fill_col, "median")
-                    elif fill_method == "Mode":
+                    elif fill_method == "Mode" or fill_method == "Mode (Most Frequent)":
                         new_df = fill_mode(new_df, fill_col)
                     elif fill_method == "Forward Fill":
                         new_df = fill_forward(new_df, fill_col)
@@ -492,24 +498,27 @@ def show_numeric_tab(df):
                 elif action == "Cap outliers":
                     new_df = cap_outliers(new_df, outlier_col)
                     op_name = "Cap Outliers"
+                else:
+                    op_name = "Keep Outliers"
                 
                 st.session_state["temp_df"] = new_df
                 st.session_state["temp_affected"] = [outlier_col]
                 st.session_state["temp_op"] = op_name
                 st.session_state["temp_params"] = {"column": outlier_col, "action": action}
 
-        if "temp_df" in st.session_state and "Outliers" in st.session_state.get("temp_op", ""):
-            render_preview_metrics(df, st.session_state["temp_df"], st.session_state["temp_affected"])
-            if st.button("Confirm Treatment ✅", type="primary"):
-                add_transformation(
-                    st.session_state["temp_op"],
-                    st.session_state["temp_params"],
-                    st.session_state["temp_affected"],
-                    st.session_state["temp_df"]
-                )
-                del st.session_state["temp_df"]
-                st.success("✅ Transformation applied!")
-                st.rerun()
+            if "temp_df" in st.session_state and "Outliers" in st.session_state.get("temp_op", ""):
+                render_preview_metrics(df, st.session_state["temp_df"], st.session_state["temp_affected"])
+                if st.button("Confirm Treatment ✅", type="primary"):
+                    add_transformation(
+                        st.session_state["temp_op"],
+                        st.session_state["temp_params"],
+                        st.session_state["temp_affected"],
+                        st.session_state["temp_df"]
+                    )
+                    del st.session_state["temp_df"]
+                    st.session_state["global_success"] = "✅ Transformation applied!"
+                    st.rerun()
+
         else:
             st.success("✅ No outliers detected!")
     
@@ -568,17 +577,20 @@ def show_column_ops_tab(df):
         new_name = st.text_input("New column name:", key="new_name")
         
         if st.button("🔄 Rename", use_container_width=True) and new_name and new_name != old_name:
-            new_df = rename_column(df.copy(), old_name, new_name)
-            
-            add_transformation(
-                "Rename Column",
-                {"old": old_name, "new": new_name},
-                [old_name],
-                new_df
-            )
-            
-            st.success(f"✅ Renamed '{old_name}' to '{new_name}'!")
-            st.rerun()
+            if new_name in df.columns:
+                st.error(f"Cannot rename column to '{new_name}' because it already exists. Please choose a different name.")
+            else:
+                new_df = rename_column(df.copy(), old_name, new_name)
+                
+                add_transformation(
+                    "Rename Column",
+                    {"old": old_name, "new": new_name},
+                    [old_name],
+                    new_df
+                )
+                
+                st.success(f"✅ Renamed '{old_name}' to '{new_name}'!")
+                st.rerun()
     
     with col2:
         st.markdown("#### 🗑️ Drop Column")
@@ -734,6 +746,14 @@ def show_validation_tab(df):
                     if len(violations) > 0:
                         st.warning(f"⚠️ Found {len(violations)} rows with disallowed categories!")
                         st.dataframe(violations, use_container_width=True)
+                        
+                        csv = violations.to_csv(index=False)
+                        st.download_button(
+                            "📥 Export Category Violations",
+                            csv,
+                            f"category_violations_{cat_col}.csv",
+                            "text/csv"
+                        )
                     else:
                         st.success("✅ All values are in allowed categories!")
         else:
@@ -750,6 +770,14 @@ def show_validation_tab(df):
             if len(violations) > 0:
                 st.warning(f"⚠️ Found {len(violations)} rows with null values in '{null_col}'!")
                 st.dataframe(violations, use_container_width=True)
+                
+                csv = violations.to_csv(index=False)
+                st.download_button(
+                    "📥 Export Null Violations",
+                    csv,
+                    f"null_violations_{null_col}.csv",
+                    "text/csv"
+                )
             else:
                 st.success(f"✅ No null values in '{null_col}'!")
 
@@ -765,7 +793,7 @@ def show_datatype_tab(df):
         if st.button("🔍 Preview Numeric Cleaning", use_container_width=True):
             new_df = df.copy()
             new_df = clean_numeric_strings(new_df, col_to_convert)
-            new_df[col_to_convert] = pd.to_numeric(new_df[col_to_convert], errors="coerce")
+            new_df = convert_to_numeric(new_df, col_to_convert)
             
             st.session_state["temp_df"] = new_df
             st.session_state["temp_affected"] = [col_to_convert]
@@ -798,7 +826,7 @@ def show_datatype_tab(df):
             st.session_state["temp_params"] = {"column": col_to_convert}
 
     # Common preview and confirm logic
-    if "temp_df" in st.session_state and target_type in st.session_state.get("temp_op", ""):
+    if "temp_df" in st.session_state and "Conversion" in st.session_state.get("temp_op", ""):
         render_preview_metrics(df, st.session_state["temp_df"], st.session_state["temp_affected"])
         if st.button("Confirm Conversion ✅", type="primary", use_container_width=True):
             add_transformation(
