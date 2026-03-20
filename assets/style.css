@@ -29,10 +29,50 @@ h1, h2, h3 {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* Sidebar Styling */
+/* Sidebar Styling - Dark & Animated */
 section[data-testid="stSidebar"] {
-    background-color: #FFFFFF !important;
-    border-right: 1px solid #E5E7EB;
+    background: linear-gradient(-45deg, #1e293b, #0f172a, #1e293b);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes gradientBG {
+	0% { background-position: 0% 50%; }
+	50% { background-position: 100% 50%; }
+	100% { background-position: 0% 50%; }
+}
+
+/* Sidebar Text & Nav Labels */
+[data-testid="stSidebarNav"] span, 
+[data-testid="stSidebar"] h1, 
+[data-testid="stSidebar"] h2, 
+[data-testid="stSidebar"] h3, 
+[data-testid="stSidebar"] p {
+    color: #f1f5f9 !important;
+}
+
+[data-testid="stSidebarNav"] li {
+    margin-bottom: 5px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+[data-testid="stSidebarNav"] li:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-testid="stSidebarNav"] li a {
+    color: #e2e8f0 !important;
+    text-decoration: none !important;
+    padding-left: 10px !important;
+}
+
+[data-testid="stSidebarNav"] li a[aria-current="page"] {
+    background-color: rgba(108, 92, 231, 0.15) !important;
+    border-left: 4px solid #6c5ce7 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
 }
 
 /* Button Improvements */
@@ -54,11 +94,22 @@ section[data-testid="stSidebar"] {
     border: 1px solid #E5E7EB;
 }
 
-/* Custom Success/Info messaging */
-.stAlert {
-    border-radius: 10px !important;
-    border: none !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+/* Sidebar Scrollbar */
+[data-testid="stSidebar"] ::-webkit-scrollbar {
+    width: 5px;
+}
+
+[data-testid="stSidebar"] ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+[data-testid="stSidebar"] ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+[data-testid="stSidebar"] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 /* Animation for cards */
