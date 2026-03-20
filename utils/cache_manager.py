@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 
@@ -11,6 +12,7 @@ def clear_dataset_cache():
         st.cache_resource.clear()
     except Exception:
         pass
+
 
 @st.cache_data(show_spinner=False)
 def get_cached_profile_stats(df: pd.DataFrame, dataset_hash: str) -> dict:
