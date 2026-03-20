@@ -43,6 +43,8 @@ def test_init_manager():
     assert getattr(st.session_state, "original_df", "missing") is None
     assert getattr(st.session_state, "history", "missing") == []
     assert getattr(st.session_state, "recipe_log", "missing") == []
+    assert getattr(st.session_state, "dataset_hash", "missing") is None
+    assert getattr(st.session_state, "cache_keys", "missing") == []
     assert getattr(st.session_state, "uploader_key", "missing") == 0
 
 def test_dataset_exists_and_store_dataset(sample_df):
@@ -110,7 +112,8 @@ def test_reset_session(sample_df):
     store_dataset(sample_df)
     reset_session()
     
-    # Session state is cleared, so 'df' and 'original_df' should not exist
-    assert getattr(st.session_state, "df", "missing") == "missing"
-    assert getattr(st.session_state, "original_df", "missing") == "missing"
-    assert getattr(st.session_state, "history", "missing") == "missing"
+    # Session state is re-initialized by the manager, so defaults should be present
+    assert st.session_state.get("df") is None
+    assert st.session_state.get("original_df") is None
+    assert st.session_state.get("history") == []
+    assert st.session_state.get("dataset_hash") is None
