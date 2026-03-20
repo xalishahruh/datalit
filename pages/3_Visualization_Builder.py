@@ -69,46 +69,55 @@ with ctrl_col:
     fig = None
     
     if chart_type == "Histogram":
-        col = st.selectbox("Select Numeric Column", num_cols)
-        bins = st.slider("Bins", 5, 100, 20)
-        if st.button("Generate Visualization"):
-            fig = plot_histogram(df_filtered, col, bins)
+        if not num_cols:
+            st.warning("⚠️ No numeric columns available for a Histogram.")
+        else:
+            col = st.selectbox("Select Numeric Column", num_cols)
+            bins = st.slider("Bins", 5, 100, 20)
+            if st.button("Generate Visualization"):
+                fig = plot_histogram(df_filtered, col, bins)
 
     elif chart_type == "Box Plot":
-        y_col = st.selectbox("Numeric Variable (Y)", num_cols)
-        x_col = st.selectbox("Grouping Variable (X) - Optional", ["None"] + df.columns.tolist())
-        # Phase 4: Category Control
-        top_n = st.slider("Top N Categories", 3, 50, 10)
-        
-        # Label rotation
-        smart_rot = st.checkbox("Smart Rotation (Auto-tilt if long)", value=True, key="box_smart_rot")
-        if smart_rot:
-            rot = -1
+        if not num_cols:
+            st.warning("⚠️ No numeric columns available for a Box Plot.")
         else:
-            rot = st.slider("Manual Rotation", 0, 90, 0, step=15, key="box_rot")
-        
-        if st.button("Generate Visualization"):
-            plot_df = df_filtered.copy()
-            group_val = None
-            if x_col != "None":
-                # Handle datetime grouping by day for Top N
-                if pd.api.types.is_datetime64_any_dtype(plot_df[x_col]):
-                    plot_df[x_col] = pd.to_datetime(plot_df[x_col]).dt.date
-                
-                top_categories = plot_df[x_col].value_counts().nlargest(top_n).index
-                plot_df = plot_df[plot_df[x_col].isin(top_categories)]
-                group_val = x_col
-            fig = plot_box(plot_df, y_col, group=group_val, rotation=rot)
+            y_col = st.selectbox("Numeric Variable (Y)", num_cols)
+            x_col = st.selectbox("Grouping Variable (X) - Optional", ["None"] + df.columns.tolist())
+            # Phase 4: Category Control
+            top_n = st.slider("Top N Categories", 3, 50, 10)
+            
+            # Label rotation
+            smart_rot = st.checkbox("Smart Rotation (Auto-tilt if long)", value=True, key="box_smart_rot")
+            if smart_rot:
+                rot = -1
+            else:
+                rot = st.slider("Manual Rotation", 0, 90, 0, step=15, key="box_rot")
+            
+            if st.button("Generate Visualization"):
+                plot_df = df_filtered.copy()
+                group_val = None
+                if x_col != "None":
+                    # Handle datetime grouping by day for Top N
+                    if pd.api.types.is_datetime64_any_dtype(plot_df[x_col]):
+                        plot_df[x_col] = pd.to_datetime(plot_df[x_col]).dt.date
+                    
+                    top_categories = plot_df[x_col].value_counts().nlargest(top_n).index
+                    plot_df = plot_df[plot_df[x_col].isin(top_categories)]
+                    group_val = x_col
+                fig = plot_box(plot_df, y_col, group=group_val, rotation=rot)
 
     elif chart_type == "Scatter Plot":
-        x_col = st.selectbox("X Axis", num_cols)
-        # Omit the column already selected for X from Y options
-        y_options = [c for c in num_cols if c != x_col]
-        y_col = st.selectbox("Y Axis (Numeric)", y_options)
-        color_col = st.selectbox("Color Encoding - Optional", ["None"] + cat_cols)
-        if st.button("Generate Visualization"):
-            hue = color_col if color_col != "None" else None
-            fig = plot_scatter(df_filtered, x_col, y_col, hue)
+        if len(num_cols) < 2:
+            st.warning("⚠️ At least 2 numeric columns are required for a Scatter Plot.")
+        else:
+            x_col = st.selectbox("X Axis", num_cols)
+            # Omit the column already selected for X from Y options
+            y_options = [c for c in num_cols if c != x_col]
+            y_col = st.selectbox("Y Axis (Numeric)", y_options)
+            color_col = st.selectbox("Color Encoding - Optional", ["None"] + cat_cols)
+            if st.button("Generate Visualization"):
+                hue = color_col if color_col != "None" else None
+                fig = plot_scatter(df_filtered, x_col, y_col, hue)
 
     elif chart_type == "Line Chart":
         x_col = st.selectbox("X Axis", df.columns)
@@ -152,23 +161,28 @@ with ctrl_col:
             fig = plot_line(plot_df, x_col, y_col, rotation=rot, date_format=dt_fmt)
 
     elif chart_type == "Grouped Bar Chart":
-        x_col = st.selectbox("Category (X)", cat_cols)
-        y_col = st.selectbox("Value (Y)", num_cols)
-        agg_method = st.selectbox("Aggregation", ["mean", "sum", "count", "median"])
-        # Phase 4: Category Control
-        top_n = st.slider("Top N Categories", 3, 50, 10)
-        
-        # Label rotation
-        smart_rot = st.checkbox("Smart Rotation (Auto-tilt if long)", value=True, key="bar_smart_rot")
-        if smart_rot:
-            rot = -1
+        if not num_cols:
+            st.warning("⚠️ No numeric columns available for aggregation.")
+        elif not cat_cols:
+            st.warning("⚠️ No categorical columns available for grouping.")
         else:
-            rot = st.slider("Manual Rotation", 0, 90, 45, step=15, key="bar_rot")
-        
-        if st.button("Generate Visualization"):
-            top_categories = df_filtered[x_col].value_counts().nlargest(top_n).index
-            plot_df = df_filtered[df_filtered[x_col].isin(top_categories)]
-            fig = plot_grouped_bar(plot_df, x_col, y_col, agg_method, rotation=rot)
+            x_col = st.selectbox("Category (X)", cat_cols)
+            y_col = st.selectbox("Value (Y)", num_cols)
+            agg_method = st.selectbox("Aggregation", ["mean", "sum", "count", "median"])
+            # Phase 4: Category Control
+            top_n = st.slider("Top N Categories", 3, 50, 10)
+            
+            # Label rotation
+            smart_rot = st.checkbox("Smart Rotation (Auto-tilt if long)", value=True, key="bar_smart_rot")
+            if smart_rot:
+                rot = -1
+            else:
+                rot = st.slider("Manual Rotation", 0, 90, 45, step=15, key="bar_rot")
+            
+            if st.button("Generate Visualization"):
+                top_categories = df_filtered[x_col].value_counts().nlargest(top_n).index
+                plot_df = df_filtered[df_filtered[x_col].isin(top_categories)]
+                fig = plot_grouped_bar(plot_df, x_col, y_col, agg_method, rotation=rot)
 
     elif chart_type == "Correlation Heatmap":
         selected_num_cols = st.multiselect(
