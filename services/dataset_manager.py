@@ -1,9 +1,6 @@
-
 import streamlit as st
 import pandas as pd
 import datetime
-import utils.data_helpers as data_helpers
-import utils.cache_manager as cache_manager
 import time
 from utils.session_manager import init_session as _init_session, reset_session as _reset_session
 from utils.cache_manager import clear_dataset_cache
@@ -91,5 +88,6 @@ def reset_session():
     clear_dataset_cache()
 
 def update_dataset(df):
+    """Updates the work area directly (use sparingly outside transformations)."""
     st.session_state["df"] = df
     _update_state(df)
