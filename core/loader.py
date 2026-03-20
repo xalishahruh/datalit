@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import streamlit as st
 
 def _load_csv(file):
     """Internal helper to load CSV with encoding fallback."""
@@ -9,6 +10,7 @@ def _load_csv(file):
         file.seek(0)
         return pd.read_csv(file, on_bad_lines="skip", encoding="ISO-8859-1", low_memory=False)
 
+@st.cache_data
 def load_dataset(file, file_type):
     """
     Intelligently loads a dataset based on the provided file_type.
