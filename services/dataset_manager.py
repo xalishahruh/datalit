@@ -1,8 +1,10 @@
+
 import streamlit as st
 import pandas as pd
 import datetime
 import utils.data_helpers as data_helpers
 import utils.cache_manager as cache_manager
+import time
 from utils.session_manager import init_session as _init_session, reset_session as _reset_session
 from utils.cache_manager import clear_dataset_cache
 from utils.data_helpers import generate_dataset_hash
@@ -44,13 +46,14 @@ def dataset_exists():
     """True if a dataset has been uploaded."""
     return st.session_state.get("df") is not None
 
-def add_transformation(op_name, params, affected_cols, df_after):
+def add_transformation(op_name, params, affected_cols, df_after, duration=None):
     """Logs a change, updates the undo history, caps memory, and clears cache."""
     log_entry = {
         'operation': op_name,
         'parameters': params,
         'affected_columns': affected_cols,
-        'timestamp': datetime.datetime.now().strftime("%H:%M:%S")
+        'timestamp': datetime.datetime.now().strftime("%H:%M:%S"),
+        'duration': f"{duration:.4f}s" if duration is not None else "N/A"
     }
     st.session_state["recipe_log"].append(log_entry)
     
