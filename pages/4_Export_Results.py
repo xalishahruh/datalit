@@ -40,7 +40,8 @@ else:
             "Operation": log.get('operation', 'Unknown'),
             "Affected Columns": cols_summary,
             "Parameters": param_summary,
-            "Time": log.get('timestamp', '')
+            "Time": log.get('timestamp', ''),
+            "Duration": log.get('duration', 'N/A')
         })
     
     summary_df = pd.DataFrame(summary_data)
