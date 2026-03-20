@@ -565,7 +565,17 @@ def show_numeric_tab(df):
             st.session_state["temp_params"] = {"columns": scale_cols, "method": scale_method}
 
         if "temp_df" in st.session_state and "Scaling" in st.session_state.get("temp_op", ""):
-            render_preview_metrics(df, st.session_state["temp_df"], st.session_state["temp_affected"])
+            st.markdown("#### 📊 Scaling Statistics (Before vs. After)")
+            affected = st.session_state["temp_affected"]
+            
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("Original Statistics:")
+                st.dataframe(df[affected].describe().round(4), use_container_width=True)
+            with c2:
+                st.markdown("Scaled Statistics:")
+                st.dataframe(st.session_state["temp_df"][affected].describe().round(4), use_container_width=True)
+                
             if st.button("Confirm Scaling ✅", type="primary"):
                 add_transformation(
                     st.session_state["temp_op"],
