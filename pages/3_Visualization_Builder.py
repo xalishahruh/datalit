@@ -4,12 +4,14 @@ from core.visualization_engine import (
     plot_histogram, plot_box, plot_scatter, 
     plot_line, plot_grouped_bar, plot_correlation_heatmap
 )
-from services.dataset_manager import get_dataset, dataset_exists
-from utils.ui_utils import apply_custom_styles
+from services.dataset_manager import get_dataset, dataset_exists, init_manager
 
 # Page Config
 st.set_page_config(page_title="Visualization Builder", layout="wide")
 apply_custom_styles()
+
+# Initialize session state
+init_manager()
 
 st.title("📊 Visualization Builder")
 st.markdown("---")
