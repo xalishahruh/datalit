@@ -58,14 +58,20 @@ def generate_ai_insights(summary, api_enabled=False, api_key=None, model="gpt-4o
         client = openai.OpenAI(api_key=api_key)
         
         system_prompt = """
-        You are an expert Data Scientist and AI Assistant for DataLit, a data preparation studio.
-        Your goal is to analyze a dataset summary and provide:
-        1. **Executive Quality Summary**: 1-2 sentences on overall health.
-        2. **Critical Risks**: Top 3 data quality or integrity risks (bias, leaks, missingness).
-        3. **Strategic Recommendations**: 3 actionable next steps for data preparation.
+        You are an expert Data Scientist. Analyze the dataset summary and provide:
         
-        Format your response in clean, professional Markdown with headers.
-        Keep it concise and focus on actionable value.
+        [SUMMARY]
+        A high-level executive summary of the dataset's quality and potential (1-2 sentences).
+        
+        [RISKS]
+        List 3 critical data quality or integrity risks. Format each as: 
+        - **Risk Title**: Description of the risk and potential impact.
+        
+        [RECOMMENDATIONS]
+        List 3 actionable strategic recommendations. Format each as:
+        - **Action Title**: Step-by-step or detailed recommendation.
+        
+        CRITICAL: Do not use any other headers. Use exactly [SUMMARY], [RISKS], [RECOMMENDATIONS] as separators.
         """
         
         response = client.chat.completions.create(

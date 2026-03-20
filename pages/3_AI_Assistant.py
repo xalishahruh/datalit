@@ -60,6 +60,58 @@ with col3:
 
 st.divider()
 
+def display_beautiful_insights(text):
+    """Parses and renders AI insights using dashboard UI elements."""
+    if not text:
+        return
+        
+    parts = {}
+    current_key = None
+    
+    for line in text.split('\n'):
+        line = line.strip()
+        if "[SUMMARY]" in line:
+            current_key = "summary"
+            parts[current_key] = []
+        elif "[RISKS]" in line:
+            current_key = "risks"
+            parts[current_key] = []
+        elif "[RECOMMENDATIONS]" in line:
+            current_key = "recommendations"
+            parts[current_key] = []
+        elif current_key and line:
+            parts[current_key].append(line)
+
+    # 1. Summary Card
+    if "summary" in parts:
+        summary_text = " ".join(parts["summary"])
+        st.markdown(f"""
+            <div class="summary-card">
+                <h3 style="margin:0; font-size: 1.2rem; color: #6c5ce7;">Executive Data Health Summary</h3>
+                <p style="margin-top: 10px; font-size: 1.1rem; line-height: 1.6;">{summary_text}</p>
+            </div>
+        """, unsafe_allow_html=True)
+        st.write("")
+
+    # 2. Risks & Recommendations in Columns
+    col_r1, col_r2 = st.columns(2)
+    
+    with col_r1:
+        st.markdown("### ⚠️ Critical Risks")
+        if "risks" in parts:
+            for risk in parts["risks"]:
+                st.markdown(f"""<div class="insight-card">{risk}</div>""", unsafe_allow_html=True)
+        else:
+            st.info("No specific risks identified.")
+            
+    with col_r2:
+        st.markdown("### 🎯 Strategic Actions")
+        if "recommendations" in parts:
+            for rec in parts["recommendations"]:
+                st.markdown(f"""<div class="insight-card">{rec}</div>""", unsafe_allow_html=True)
+        else:
+            st.info("No specific recommendations.")
+
 # --- Suggestion Feed ---
 st.subheader("💡 Smart Suggestions")
 
@@ -149,7 +201,7 @@ with col_in1:
 
 with col_in2:
     if st.session_state["ai_insights"]:
-        st.markdown(st.session_state["ai_insights"])
+        display_beautiful_insights(st.session_state["ai_insights"])
     else:
         st.info("Click the button to generate deep insights into your data's strategic quality and potential risks.")
 
