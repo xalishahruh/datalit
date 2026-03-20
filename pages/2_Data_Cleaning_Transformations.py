@@ -520,6 +520,13 @@ def show_numeric_tab(df):
 
             if "temp_df" in st.session_state and "Outliers" in st.session_state.get("temp_op", ""):
                 render_preview_metrics(df, st.session_state["temp_df"], st.session_state["temp_affected"])
+                
+                action_taken = st.session_state["temp_params"]["action"]
+                if action_taken == "Cap outliers":
+                    col = st.session_state["temp_affected"][0]
+                    capped_count = (df[col] != st.session_state["temp_df"][col]).sum()
+                    st.info(f"💡 **Impact:** {int(capped_count)} extreme outlier values were successfully capped.")
+                
                 if st.button("Confirm Treatment ✅", type="primary"):
                     add_transformation(
                         st.session_state["temp_op"],
