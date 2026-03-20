@@ -641,7 +641,7 @@ def show_column_ops_tab(df):
             safe_dict = {col: df[col] for col in df.columns}
             safe_dict.update({'log': np.log, 'exp': np.exp, 'sqrt': np.sqrt})
             
-            new_df = create_formula_column(df.copy(), new_col_name, formula)
+            new_df = create_formula_column(df.copy(), new_col_name, formula, env=safe_dict)
             
             add_transformation(
                 "Create Formula Column",

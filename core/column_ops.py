@@ -7,8 +7,11 @@ def rename_column(df, old_name, new_name):
 def drop_column(df, column):
     return df.drop(columns=[column])
 
-def create_formula_column(df, new_column, formula):
-    df[new_column] = eval(formula, {}, df)
+def create_formula_column(df, new_column, formula, env=None):
+    if env is not None:
+        df[new_column] = eval(formula, {"__builtins__": {}}, env)
+    else:
+        df[new_column] = eval(formula, {}, df)
     return df
 
 def equal_width_bins(df, column, bins):
