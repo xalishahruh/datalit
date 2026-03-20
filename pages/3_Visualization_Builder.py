@@ -75,7 +75,8 @@ with ctrl_col:
             col = st.selectbox("Select Numeric Column", num_cols)
             bins = st.slider("Bins", 5, 100, 20)
             if st.button("Generate Visualization"):
-                fig = plot_histogram(df_filtered, col, bins)
+                with st.spinner("Generating Histogram..."):
+                    fig = plot_histogram(df_filtered, col, bins)
 
     elif chart_type == "Box Plot":
         if not num_cols:
@@ -94,17 +95,18 @@ with ctrl_col:
                 rot = st.slider("Manual Rotation", 0, 90, 0, step=15, key="box_rot")
             
             if st.button("Generate Visualization"):
-                plot_df = df_filtered.copy()
-                group_val = None
-                if x_col != "None":
-                    # Handle datetime grouping by day for Top N
-                    if pd.api.types.is_datetime64_any_dtype(plot_df[x_col]):
-                        plot_df[x_col] = pd.to_datetime(plot_df[x_col]).dt.date
-                    
-                    top_categories = plot_df[x_col].value_counts().nlargest(top_n).index
-                    plot_df = plot_df[plot_df[x_col].isin(top_categories)]
-                    group_val = x_col
-                fig = plot_box(plot_df, y_col, group=group_val, rotation=rot)
+                with st.spinner("Generating Box Plot..."):
+                    plot_df = df_filtered.copy()
+                    group_val = None
+                    if x_col != "None":
+                        # Handle datetime grouping by day for Top N
+                        if pd.api.types.is_datetime64_any_dtype(plot_df[x_col]):
+                            plot_df[x_col] = pd.to_datetime(plot_df[x_col]).dt.date
+                        
+                        top_categories = plot_df[x_col].value_counts().nlargest(top_n).index
+                        plot_df = plot_df[plot_df[x_col].isin(top_categories)]
+                        group_val = x_col
+                    fig = plot_box(plot_df, y_col, group=group_val, rotation=rot)
 
     elif chart_type == "Scatter Plot":
         if len(num_cols) < 2:
@@ -116,8 +118,9 @@ with ctrl_col:
             y_col = st.selectbox("Y Axis (Numeric)", y_options)
             color_col = st.selectbox("Color Encoding - Optional", ["None"] + cat_cols)
             if st.button("Generate Visualization"):
-                hue = color_col if color_col != "None" else None
-                fig = plot_scatter(df_filtered, x_col, y_col, hue)
+                with st.spinner("Generating Scatter Plot..."):
+                    hue = color_col if color_col != "None" else None
+                    fig = plot_scatter(df_filtered, x_col, y_col, hue)
 
     elif chart_type == "Line Chart":
         x_col = st.selectbox("X Axis", df.columns)
@@ -154,11 +157,12 @@ with ctrl_col:
             dt_fmt = st.text_input("Date Format (e.g., %d/%m)", value="%d/%m/%y %H:%M", key="dt_fmt_input")
 
         if st.button("Generate Visualization"):
-            plot_df = df_filtered.copy()
-            if resample_freq:
-                # Group by time and take mean of Y
-                plot_df = plot_df.set_index(x_col).resample(resample_freq)[y_col].mean().reset_index()
-            fig = plot_line(plot_df, x_col, y_col, rotation=rot, date_format=dt_fmt)
+            with st.spinner("Generating Line Chart..."):
+                plot_df = df_filtered.copy()
+                if resample_freq:
+                    # Group by time and take mean of Y
+                    plot_df = plot_df.set_index(x_col).resample(resample_freq)[y_col].mean().reset_index()
+                fig = plot_line(plot_df, x_col, y_col, rotation=rot, date_format=dt_fmt)
 
     elif chart_type == "Grouped Bar Chart":
         if not num_cols:
@@ -180,24 +184,27 @@ with ctrl_col:
                 rot = st.slider("Manual Rotation", 0, 90, 45, step=15, key="bar_rot")
             
             if st.button("Generate Visualization"):
-                top_categories = df_filtered[x_col].value_counts().nlargest(top_n).index
-                plot_df = df_filtered[df_filtered[x_col].isin(top_categories)]
-                fig = plot_grouped_bar(plot_df, x_col, y_col, agg_method, rotation=rot)
+                with st.spinner("Generating Grouped Bar Chart..."):
+                    top_categories = df_filtered[x_col].value_counts().nlargest(top_n).index
+                    plot_df = df_filtered[df_filtered[x_col].isin(top_categories)]
+                    fig = plot_grouped_bar(plot_df, x_col, y_col, agg_method, rotation=rot)
 
     elif chart_type == "Correlation Heatmap":
-        selected_num_cols = st.multiselect(
-            "Select Columns for Heatmap", 
-            num_cols, 
-            default=num_cols[:10] # Default to first 10 to keep it readable
-        )
-        
-        if st.button("Generate Visualization"):
-            if len(selected_num_cols) < 2:
-                st.error("Please select at least 2 numeric columns.")
-            else:
-                fig = plot_correlation_heatmap(df_filtered[selected_num_cols])
-                if fig is None:
-                    st.error("Correlation matrix could not be computed.")
+        with st.form("heatmap_form"):
+            selected_num_cols = st.multiselect(
+                "Select Columns for Heatmap", 
+                num_cols, 
+                default=num_cols[:10] # Default to first 10 to keep it readable
+            )
+            
+            if st.form_submit_button("Generate Visualization"):
+                with st.spinner("Computing Heatmap..."):
+                    if len(selected_num_cols) < 2:
+                        st.error("Please select at least 2 numeric columns.")
+                    else:
+                        fig = plot_correlation_heatmap(df_filtered[selected_num_cols])
+                        if fig is None:
+                            st.error("Correlation matrix could not be computed.")
 
 with plot_col:
     st.subheader("📈 Preview")
