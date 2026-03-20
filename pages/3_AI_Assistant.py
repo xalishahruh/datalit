@@ -42,28 +42,34 @@ col1, col2, col3 = st.columns([1, 1, 1])
 
 # Health Score
 health_score = suggestion_engine.calculate_health_score(df)
-with col1:
-    st.metric("Data Health Score", f"{health_score}/100")
-    if health_score > 90:
-        st.success("Your data looks excellent!")
-    elif health_score > 70:
-        st.info("Good data, some tweaks recommended.")
-    else:
-        st.warning("Action required: critical issues found.")
-
-# Suggestions Data
+# Health Score & Active Suggestions
 suggestions = suggestion_engine.analyze_dataset(df)
 if "dismissed_suggestions" not in st.session_state:
     st.session_state["dismissed_suggestions"] = []
 
 # Filter out dismissed ones
 active_suggestions = [s for s in suggestions if s["id"] not in st.session_state["dismissed_suggestions"]]
+critical_count = sum(1 for s in active_suggestions if s["severity"] == "critical")
+warning_count = sum(1 for s in active_suggestions if s["severity"] == "warning")
+
+health_score = suggestion_engine.calculate_health_score(df)
+
+with col1:
+    st.metric("Data Health Score", f"{health_score}/100")
+    if health_score > 90 and critical_count == 0:
+        st.success("✨ Your data looks excellent!")
+    elif health_score > 75 and critical_count == 0:
+        st.info("ℹ️ Good data, minor improvements suggested.")
+    elif critical_count > 0:
+        st.error("⚠️ Urgent: Critical data quality issues detected!")
+    else:
+        st.warning("⚡ Priority: Multiple quality issues need attention.")
 
 with col2:
     st.metric("Active Suggestions", len(active_suggestions))
 
 with col3:
-    st.metric("Critical Issues", sum(1 for s in active_suggestions if s["severity"] == "critical"))
+    st.metric("Critical Issues", critical_count)
 
 st.divider()
 
