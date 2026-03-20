@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import time
 import json
 import openpyxl  
 
@@ -139,6 +140,7 @@ def show_missing_values_tab(df):
             )
         
         if st.button("🗑️ Remove Rows", use_container_width=True):
+            start_time = time.time()
             with st.spinner("Removing missing values..."):
                 if remove_option == "Remove from all columns":
                     new_df = drop_missing_rows(df)
@@ -156,6 +158,7 @@ def show_missing_values_tab(df):
                 st.session_state["temp_affected"] = affected
                 st.session_state["temp_op"] = "Remove Missing Rows"
                 st.session_state["temp_params"] = {"option": remove_option, "columns": cols_to_check if cols_to_check else "all"}
+                st.session_state["temp_duration"] = time.time() - start_time
 
         if "temp_df" in st.session_state and st.session_state.get("temp_op") == "Remove Missing Rows":
             render_preview_metrics(df, st.session_state["temp_df"], st.session_state["temp_affected"])
@@ -164,7 +167,8 @@ def show_missing_values_tab(df):
                     st.session_state["temp_op"],
                     st.session_state["temp_params"],
                     st.session_state["temp_affected"],
-                    st.session_state["temp_df"]
+                    st.session_state["temp_df"],
+                    duration=st.session_state.get("temp_duration")
                 )
                 del st.session_state["temp_df"]
                 st.success("✅ Transformation applied!")
