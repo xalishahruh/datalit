@@ -1,19 +1,24 @@
 import streamlit as st
 import pandas as pd
 import datetime
+import utils.data_helpers as data_helpers
+import utils.cache_manager as cache_manager
+from utils.session_manager import init_session as _init_session, reset_session as _reset_session
+from utils.cache_manager import clear_dataset_cache
+from utils.data_helpers import generate_dataset_hash
+
+# Constants
+MAX_HISTORY_STATES = 5
 
 def init_manager():
-    """Initializes all required session state variables once."""
-    keys = {
-        "df": None,           # The active working dataframe
-        "original_df": None,  # The pristine backup
-        "history": [],        # List of dataframes for Undo
-        "recipe_log": [],     # List of operations performed
-        "uploader_key": 0     # Key to force reset the file uploader
-    }
-    for key, default in keys.items():
-        if key not in st.session_state:
-            st.session_state[key] = default
+    """Initializes all required session state variables once, delegating to central session manager."""
+    _init_session()
+
+def update_dataset_hash(df):
+    """Calculates dataset signature and forces cache clear."""
+    new_hash = generate_dataset_hash(df)
+    st.session_state["dataset_hash"] = new_hash
+    clear_dataset_cache()
 
 def store_dataset(df, name="Initial Upload"):
     """
@@ -24,6 +29,12 @@ def store_dataset(df, name="Initial Upload"):
     st.session_state["df"] = df.copy()
     st.session_state["history"] = [df.copy()]
     st.session_state["recipe_log"] = []
+    
+    # Calculate dataset hash and clear global cache for the new dataset
+    st.session_state["dataset_hash"] = data_helpers.generate_dataset_hash(df)
+    cache_manager.clear_dataset_cache()
+    
+    update_dataset_hash(df)
 
 def get_dataset():
     """Returns the current working dataframe."""
@@ -34,7 +45,7 @@ def dataset_exists():
     return st.session_state.get("df") is not None
 
 def add_transformation(op_name, params, affected_cols, df_after):
-    """Logs a change and updates the undo history."""
+    """Logs a change, updates the undo history, caps memory, and clears cache."""
     log_entry = {
         'operation': op_name,
         'parameters': params,
@@ -42,15 +53,31 @@ def add_transformation(op_name, params, affected_cols, df_after):
         'timestamp': datetime.datetime.now().strftime("%H:%M:%S")
     }
     st.session_state["recipe_log"].append(log_entry)
+    
+    # Capitalize on memory by preventing infinite copy scaling
     st.session_state["history"].append(df_after.copy())
     st.session_state["df"] = df_after
+    
+    st.session_state["dataset_hash"] = data_helpers.generate_dataset_hash(df_after)
+    if len(st.session_state["history"]) > MAX_HISTORY_STATES:
+        st.session_state["history"] = st.session_state["history"][-MAX_HISTORY_STATES:]
+        
+    clear_dataset_cache()
+
 
 def undo_transformation():
-    """Goes back one step in time."""
+    """Goes back one step in time safely."""
     if len(st.session_state["history"]) > 1:
         st.session_state["history"].pop()
-        st.session_state["recipe_log"].pop()
+        
+        # We can also pop the recipe log, but if history was capped, recipe log might be longer.
+        # Safe pop for recipe_log
+        if len(st.session_state["recipe_log"]) > 0:
+            st.session_state["recipe_log"].pop()
+            
         st.session_state["df"] = st.session_state["history"][-1].copy()
+        st.session_state["dataset_hash"] = data_helpers.generate_dataset_hash(st.session_state["df"])
+        clear_dataset_cache() # Invalidate cache after undo
         return True
     return False
 
@@ -60,15 +87,17 @@ def reset_dataset():
         st.session_state["df"] = st.session_state["original_df"].copy()
         st.session_state["history"] = [st.session_state["original_df"].copy()]
         st.session_state["recipe_log"] = []
+        st.session_state["dataset_hash"] = data_helpers.generate_dataset_hash(st.session_state["df"])
+        cache_manager.clear_dataset_cache()
         return True
     return False
 
 def reset_session():
-    """Completely clears the session state and forces UI widgets to reset."""
-    current_key = st.session_state.get("uploader_key", 0)
-    st.session_state.clear()
-    # Increment the key to force the file uploader to render as a brand new widget
-    st.session_state["uploader_key"] = current_key + 1
+    """Delegates to the central session annihilator."""
+    _reset_session()
+    clear_dataset_cache()
 
 def update_dataset(df):
     st.session_state["df"] = df
+    st.session_state["dataset_hash"] = data_helpers.generate_dataset_hash(df)
+    update_dataset_hash(df)
