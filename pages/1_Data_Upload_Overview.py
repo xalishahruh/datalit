@@ -64,33 +64,40 @@ if dataset_exists():
     st.write(f"**Columns:** {cols}")
     st.write(f"**Column Names:** {list(df.columns)}")
 
-    # 6. Inferred Data Types
-    st.subheader("🧬 Inferred Data Types")
-    st.dataframe(infer_dtypes(df), use_container_width=True)
-
-    # 7. Missing Values
-    st.subheader("🩹 Missing Values by Column")
-    st.dataframe(missing_values(df), use_container_width=True)
-
-    # 8. Duplicate Rows
-    st.subheader("👯 Duplicate Rows")
-    st.write(duplicate_count(df))
-
-    # 9. Numeric Summary
-    st.subheader("🔢 Numeric Summary Statistics")
-    n_sum = numeric_summary(df)
-    if not n_sum.empty:
-        st.dataframe(n_sum, use_container_width=True)
-    else:
-        st.info("No numeric columns available.")
-            
-    # 10. Categorical Summary
-    st.subheader("🔡 Categorical Summary Statistics")
-    c_sum = categorical_summary(df)
-    if not c_sum.empty:
-        st.dataframe(c_sum, use_container_width=True)
-    else:
-        st.info("No categorical columns available.")
+    # Lazy Evaluation for Profiling
+    st.divider()
+    st.subheader("🔍 Deep Data Profiling")
+    st.write("Generating a full profile for large datasets can take time.")
+    
+    if st.button("Generate Data Profile", type="primary"):
+        with st.spinner("Analyzing dataset..."):
+            # 6. Inferred Data Types
+            st.subheader("🧬 Inferred Data Types")
+            st.dataframe(infer_dtypes(df), use_container_width=True)
+        
+            # 7. Missing Values
+            st.subheader("🩹 Missing Values by Column")
+            st.dataframe(missing_values(df), use_container_width=True)
+        
+            # 8. Duplicate Rows
+            st.subheader("Duplicate Rows")
+            st.write(duplicate_count(df))
+        
+            # 9. Numeric Summary
+            st.subheader("🔢 Numeric Summary Statistics")
+            n_sum = numeric_summary(df)
+            if not n_sum.empty:
+                st.dataframe(n_sum, use_container_width=True)
+            else:
+                st.info("No numeric columns available.")
+                    
+            # 10. Categorical Summary
+            st.subheader("🔡 Categorical Summary Statistics")
+            c_sum = categorical_summary(df)
+            if not c_sum.empty:
+                st.dataframe(c_sum, use_container_width=True)
+            else:
+                st.info("No categorical columns available.")
 else:
     st.info("Please upload a file to begin your analysis.")
 
