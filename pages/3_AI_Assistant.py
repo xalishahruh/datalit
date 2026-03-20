@@ -32,7 +32,8 @@ with st.sidebar:
         ai_model = "gpt-4o-mini"
     
     st.divider()
-    if st.button("🔄 Recalculate Suggestions", use_container_width=True):
+    if st.button("🔄 Reset Suggestions", use_container_width=True):
+        st.session_state["dismissed_suggestions"] = []
         st.cache_data.clear()
         st.rerun()
 
@@ -50,15 +51,39 @@ with col1:
     else:
         st.warning("Action required: critical issues found.")
 
-# Suggestions Count
+# Suggestions Data
 suggestions = suggestion_engine.analyze_dataset(df)
+if "dismissed_suggestions" not in st.session_state:
+    st.session_state["dismissed_suggestions"] = []
+
+# Filter out dismissed ones
+active_suggestions = [s for s in suggestions if s["id"] not in st.session_state["dismissed_suggestions"]]
+
 with col2:
-    st.metric("Total Suggestions", len(suggestions))
+    st.metric("Active Suggestions", len(active_suggestions))
 
 with col3:
-    st.metric("Critical Issues", sum(1 for s in suggestions if s["severity"] == "critical"))
+    st.metric("Critical Issues", sum(1 for s in active_suggestions if s["severity"] == "critical"))
 
 st.divider()
+
+# --- Manual Insights Dashboard (Stats for each element) ---
+st.subheader("📊 Manual Data Insights")
+with st.expander("🔎 Explore Column-Level Statistics", expanded=False):
+    cols = st.columns(4)
+    for i, col_name in enumerate(df.columns):
+        with cols[i % 4]:
+            dtype = str(df[col_name].dtype)
+            nulls = df[col_name].isna().sum()
+            uniques = df[col_name].nunique()
+            
+            st.markdown(f"""
+                <div style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                    <h4 style="margin: 0; font-size: 0.9rem; color: #6c5ce7;">{col_name}</h4>
+                    <p style="margin: 5px 0 0 0; font-size: 0.8rem; opacity: 0.7;">Type: {dtype}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; opacity: 0.7;">Nulls: {nulls} | Uniques: {uniques}</p>
+                </div>
+            """, unsafe_allow_html=True)
 
 def display_beautiful_insights(text):
     """Parses and renders AI insights using dashboard UI elements."""
@@ -115,11 +140,11 @@ def display_beautiful_insights(text):
 # --- Suggestion Feed ---
 st.subheader("💡 Smart Suggestions")
 
-if not suggestions:
+if not active_suggestions:
     st.balloons()
     st.success("No issues found! Your dataset is ready for analysis.")
 else:
-    for s in suggestions:
+    for s in active_suggestions:
         with st.container():
             # Severity border color
             color = {"critical": "#ff4b4b", "warning": "#ffa500", "info": "#6c5ce7"}[s["severity"]]
@@ -170,7 +195,8 @@ else:
             
             with btn_col2:
                 if st.button("Dismiss", key=f"dismiss_{s['id']}"):
-                    st.toast("Suggestion hidden from view.")
+                    st.session_state["dismissed_suggestions"].append(s["id"])
+                    st.rerun()
         st.write("") # Spacer
 
 st.divider()
