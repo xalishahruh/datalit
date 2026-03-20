@@ -1,6 +1,9 @@
 import streamlit as st
 
 st.set_page_config(page_title="Data Upload & Overview", layout="wide")
+from utils.ui_utils import apply_custom_styles
+apply_custom_styles()
+
 from core.loader import load_dataset
 from core.profiling import (
     infer_dtypes,

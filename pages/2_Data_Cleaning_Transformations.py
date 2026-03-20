@@ -5,6 +5,8 @@ from datetime import datetime
 import time
 import json
 import openpyxl  
+from utils.ui_utils import apply_custom_styles
+apply_custom_styles()
 
 # Import your existing modules - FIXED PATHS
 from core.categorical_tools import (
@@ -197,6 +199,7 @@ def show_missing_values_tab(df):
             const_value = st.text_input("Enter constant value:", key="const_value")
         
         if st.button("✨ Fill Values", use_container_width=True):
+            start_time = time.time()
             with st.spinner("Filling missing values..."):
                 new_df = df.copy()
                 
@@ -221,7 +224,8 @@ def show_missing_values_tab(df):
                             f"Fill Missing - {fill_method}",
                             {"column": fill_col, "method": fill_method, "value": const_value if const_value else ""},
                             [fill_col],
-                            new_df
+                            new_df,
+                            duration=time.time() - start_time
                         )
                         
                         st.success(f"✅ Filled {filled_count} missing values in '{fill_col}'!")
@@ -245,6 +249,7 @@ def show_missing_values_tab(df):
     )
     
     if st.button("🗑️ Drop Columns", use_container_width=True):
+        start_time = time.time()
         new_df, dropped_cols = drop_columns_by_threshold(df, threshold/100)
         
         if dropped_cols:
@@ -252,7 +257,8 @@ def show_missing_values_tab(df):
                 "Drop Columns by Threshold",
                 {"threshold": f"{threshold}%"},
                 dropped_cols,
-                new_df
+                new_df,
+                duration=time.time() - start_time
             )
             st.success(f"✅ Dropped columns: {', '.join(dropped_cols)}")
             st.rerun()
@@ -310,6 +316,7 @@ def show_duplicates_tab(df):
         )
         
         if st.button("✨ Remove Duplicates", use_container_width=True):
+            start_time = time.time()
             subset = dup_cols if dup_type == "Duplicates in specific columns" and dup_cols else None
             keep = "first" if remove_type == "First" else "last"
             
@@ -322,7 +329,8 @@ def show_duplicates_tab(df):
                     "Remove Duplicates",
                     {"type": remove_type, "subset": subset if subset else "full"},
                     list(df.columns),
-                    new_df
+                    new_df,
+                    duration=time.time() - start_time
                 )
                 
                 st.success(f"✅ Removed {rows_removed} duplicate rows!")

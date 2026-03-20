@@ -5,6 +5,7 @@ from core.visualization_engine import (
     plot_line, plot_grouped_bar, plot_correlation_heatmap
 )
 from services.dataset_manager import get_dataset, dataset_exists, init_manager
+from utils.ui_utils import apply_custom_styles
 
 # Page Config
 st.set_page_config(page_title="Visualization Builder", layout="wide")
