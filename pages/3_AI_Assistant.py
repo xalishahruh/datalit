@@ -21,11 +21,18 @@ df = dataset_manager.get_dataset()
 
 # Sidebar Settings
 with st.sidebar:
-    st.header("AI Settings")
-    enable_ai = st.toggle("Enable External AI Insights", value=False)
-    api_key = st.text_input("OpenAI API Key (Optional)", type="password") if enable_ai else None
+    st.header("⚙️ AI Configuration")
+    enable_ai = st.toggle("Enable External AI Insights", value=False, help="Connect to OpenAI for deep dataset analysis")
     
-    if st.button("Clear Cache & Recalculate"):
+    if enable_ai:
+        api_key = st.text_input("OpenAI API Key", type="password", placeholder="sk-...")
+        ai_model = st.selectbox("Preferred Model", ["gpt-4o-mini", "gpt-4o"], index=0)
+    else:
+        api_key = None
+        ai_model = "gpt-4o-mini"
+    
+    st.divider()
+    if st.button("🔄 Recalculate Suggestions", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
@@ -62,26 +69,25 @@ if not suggestions:
 else:
     for s in suggestions:
         with st.container():
-            # Severity color
-            color = {"critical": "red", "warning": "orange", "info": "blue"}[s["severity"]]
+            # Severity border color
+            color = {"critical": "#ff4b4b", "warning": "#ffa500", "info": "#6c5ce7"}[s["severity"]]
             
             # Use styling for card effect
             st.markdown(f"""
-                <div style="border: 2px solid {color}; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                    <h3 style="margin: 0; color: {color};">{s['title']}</h3>
-                    <p style="margin: 10px 0;">{s['description']}</p>
+                <div style="border-left: 5px solid {color}; background-color: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; margin-bottom: 10px;">
+                    <h4 style="margin: 0; color: {color}; text-transform: uppercase; font-size: 0.8rem;">{s['severity']}</h4>
+                    <h3 style="margin: 5px 0;">{s['title']}</h3>
+                    <p style="margin: 10px 0; opacity: 0.9;">{s['description']}</p>
                 </div>
             """, unsafe_allow_html=True)
             
             # Action Buttons
-            btn_col1, btn_col2 = st.columns([1, 4])
+            btn_col1, btn_col2, _ = st.columns([1, 1, 3])
             with btn_col1:
                 if s["auto_fixable"]:
-                    if st.button(f"Fix Now", key=f"fix_{s['id']}"):
-                        # APPLY FIX
-                        with st.spinner(f"Applying fix for {s['title']}..."):
+                    if st.button(f"Fix Now", key=f"fix_{s['id']}", type="primary"):
+                        with st.spinner(f"Applying fix..."):
                             start_time = time.time()
-                            
                             new_df = df.copy()
                             action = s["fix_action"]
                             params = s["params"]
@@ -104,27 +110,48 @@ else:
                                 df_after=new_df,
                                 duration=duration
                             )
-                            st.success(f"Applied: {s['title']}")
-                            time.sleep(1)
+                            st.toast(f"✅ Applied: {s['title']}")
+                            time.sleep(0.5)
                             st.rerun()
                 else:
-                    st.info("Manual check required.")
+                    st.button("Manual", key=f"man_{s['id']}", disabled=True)
             
             with btn_col2:
                 if st.button("Dismiss", key=f"dismiss_{s['id']}"):
-                    st.toast("Suggestion dismissed.")
+                    st.toast("Suggestion hidden from view.")
         st.write("") # Spacer
 
 st.divider()
 
 # --- AI Insights Panel ---
-st.subheader("🧠 Deep Insights (AI)")
+st.subheader("🧠 Deep Strategy & Risk Analysis")
 
-if st.button("✨ Generate AI Insights"):
-    with st.spinner("Analyzing dataset patterns..."):
-        summary = ai_assistant.generate_dataset_summary(df)
-        insights = ai_assistant.generate_ai_insights(summary, api_enabled=enable_ai, api_key=api_key)
-        st.markdown(insights)
+# Use session state to persist insights
+if "ai_insights" not in st.session_state:
+    st.session_state["ai_insights"] = None
+
+col_in1, col_in2 = st.columns([1, 4])
+with col_in1:
+    if st.button("✨ Generate Insights", type="secondary", use_container_width=True):
+        with st.spinner("Executing detailed AI analysis..."):
+            summary = ai_assistant.generate_dataset_summary(df)
+            st.session_state["ai_insights"] = ai_assistant.generate_ai_insights(
+                summary, 
+                api_enabled=enable_ai, 
+                api_key=api_key,
+                model=ai_model
+            )
+    
+    if st.session_state["ai_insights"]:
+        if st.button("🗑️ Clear Insights", use_container_width=True):
+            st.session_state["ai_insights"] = None
+            st.rerun()
+
+with col_in2:
+    if st.session_state["ai_insights"]:
+        st.markdown(st.session_state["ai_insights"])
+    else:
+        st.info("Click the button to generate deep insights into your data's strategic quality and potential risks.")
 
 # --- Empty State Footer ---
 if len(df) == 0:
