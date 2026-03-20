@@ -162,3 +162,12 @@ outputs/exported_data/*
 outputs/transformation_logs/*
 !outputs/exported_data/.gitkeep
 !outputs/transformation_logs/.gitkeep
+
+#Logs txt files
+pytest_all_log.txt
+pytest_tests_log.txt
+pytest_log_utf8.txt
+pytest_log.txt
+pytest_log_utf8_2.txt
+pytest_log_utf8_3.txt
+pytest_m6.txt
