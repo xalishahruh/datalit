@@ -1,7 +1,72 @@
-h1 {
-    color: #2c3e50;
+/* DataLit Premium Theme */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;700&display=swap');
+
+:root {
+  --primary-color: #6C5CE7;
+  --secondary-color: #FD79A8;
+  --accent-color: #00CEC9;
+  --bg-color: #F9FAFB;
+  --text-main: #2D3436;
 }
 
-.sidebar .sidebar-content {
-    background-color: #f8f9fa;
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  color: #2D3436;
+}
+
+/* Glassmorphism Cards */
+.stMarkdown div[data-testid="stMetricValue"] {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Sidebar Styling */
+section[data-testid="stSidebar"] {
+    background-color: #FFFFFF !important;
+    border-right: 1px solid #E5E7EB;
+}
+
+/* Button Improvements */
+.stButton > button {
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+}
+
+/* Dataframe Styling */
+.stDataFrame {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #E5E7EB;
+}
+
+/* Custom Success/Info messaging */
+.stAlert {
+    border-radius: 10px !important;
+    border: none !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Animation for cards */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.suggestion-card {
+    animation: fadeIn 0.5s ease forwards;
 }
