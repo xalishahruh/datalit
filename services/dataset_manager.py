@@ -16,10 +16,9 @@ def init_manager():
     """Initializes all required session state variables once, delegating to central session manager."""
     _init_session()
 
-def update_dataset_hash(df):
-    """Calculates dataset signature and forces cache clear."""
-    new_hash = generate_dataset_hash(df)
-    st.session_state["dataset_hash"] = new_hash
+def _update_state(df):
+    """Internal helper to sync hash and clear cache when data changes."""
+    st.session_state["dataset_hash"] = generate_dataset_hash(df)
     clear_dataset_cache()
 
 def store_dataset(df, name="Initial Upload"):
@@ -32,11 +31,7 @@ def store_dataset(df, name="Initial Upload"):
     st.session_state["history"] = [df.copy()]
     st.session_state["recipe_log"] = []
     
-    # Calculate dataset hash and clear global cache for the new dataset
-    st.session_state["dataset_hash"] = data_helpers.generate_dataset_hash(df)
-    cache_manager.clear_dataset_cache()
-    
-    update_dataset_hash(df)
+    _update_state(df)
 
 def get_dataset():
     """Returns the current working dataframe."""
@@ -59,28 +54,24 @@ def add_transformation(op_name, params, affected_cols, df_after, duration=None):
     
     # Capitalize on memory by preventing infinite copy scaling
     st.session_state["history"].append(df_after.copy())
-    st.session_state["df"] = df_after
-    
-    st.session_state["dataset_hash"] = data_helpers.generate_dataset_hash(df_after)
     if len(st.session_state["history"]) > MAX_HISTORY_STATES:
         st.session_state["history"] = st.session_state["history"][-MAX_HISTORY_STATES:]
         
-    clear_dataset_cache()
-
+    st.session_state["df"] = df_after
+    _update_state(df_after)
 
 def undo_transformation():
     """Goes back one step in time safely."""
     if len(st.session_state["history"]) > 1:
         st.session_state["history"].pop()
         
-        # We can also pop the recipe log, but if history was capped, recipe log might be longer.
-        # Safe pop for recipe_log
+        # If history was capped, log might have more steps than history array length.
+        # But we pop latest available.
         if len(st.session_state["recipe_log"]) > 0:
             st.session_state["recipe_log"].pop()
             
         st.session_state["df"] = st.session_state["history"][-1].copy()
-        st.session_state["dataset_hash"] = data_helpers.generate_dataset_hash(st.session_state["df"])
-        clear_dataset_cache() # Invalidate cache after undo
+        _update_state(st.session_state["df"])
         return True
     return False
 
@@ -90,8 +81,7 @@ def reset_dataset():
         st.session_state["df"] = st.session_state["original_df"].copy()
         st.session_state["history"] = [st.session_state["original_df"].copy()]
         st.session_state["recipe_log"] = []
-        st.session_state["dataset_hash"] = data_helpers.generate_dataset_hash(st.session_state["df"])
-        cache_manager.clear_dataset_cache()
+        _update_state(st.session_state["df"])
         return True
     return False
 
@@ -102,5 +92,4 @@ def reset_session():
 
 def update_dataset(df):
     st.session_state["df"] = df
-    st.session_state["dataset_hash"] = data_helpers.generate_dataset_hash(df)
-    update_dataset_hash(df)
+    _update_state(df)
