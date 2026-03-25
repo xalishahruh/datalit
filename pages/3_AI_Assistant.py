@@ -60,7 +60,7 @@ with st.sidebar:
             
             if use_default:
                 api_base_url = st.text_input("Base URL", value="https://api.groq.com/openai/v1", disabled=True, key="base_url_default")
-                api_key = st.text_input("Groq API Key", value="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", type="password", disabled=True, key="api_key_default")
+                api_key = st.text_input("Groq API Key", value="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", type="password", disabled=True, key="api_key_default")
             else:
                 api_base_url = st.text_input("Base URL", value="https://api.groq.com/openai/v1", key="base_url_custom")
                 api_key = st.text_input("Groq API Key", type="password", placeholder="gsk-...", key="api_key_custom")
