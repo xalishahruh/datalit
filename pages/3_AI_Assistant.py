@@ -61,7 +61,8 @@ with st.sidebar:
             if use_default:
                 api_base_url = st.text_input("Base URL", value="https://api.groq.com/openai/v1", disabled=True, key="base_url_default_v2")
                 st.text_input("Groq API Key", value="••••••••••••••••••••••••••••••••••••••••••••••••••••", disabled=True, key="api_key_default_v2")
-                api_key = "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"
+                api_key = "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"
+                st.caption(f"✅ Securely mapped to your key ending in `...{api_key[-4:]}`")
             else:
                 api_base_url = st.text_input("Base URL", value="https://api.groq.com/openai/v1", key="base_url_custom")
                 api_key = st.text_input("Groq API Key", type="password", placeholder="gsk-...", key="api_key_custom")
@@ -78,7 +79,7 @@ with st.sidebar:
             api_key = st.text_input("OpenAI API Key", type="password", key="oai_api_key_val", placeholder="sk-...")
             ai_model = st.selectbox("Preferred Model", ["gpt-4o-mini", "gpt-4o"], index=0)
     else:
-        api_key = "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"
+        api_key = "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"
         ai_provider = "Groq"
         api_base_url = "https://api.groq.com/openai/v1"
         ai_model = "llama-3.3-70b-versatile"
