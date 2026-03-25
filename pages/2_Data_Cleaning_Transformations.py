@@ -18,7 +18,7 @@ from core.column_ops import (
     equal_width_bins, quantile_bins
 )
 from core.numeric_tools import (
-    detect_outliers_iqr, cap_outliers, remove_outliers,
+    detect_outliers_iqr, detect_outliers_zscore, cap_outliers, remove_outliers,
     minmax_scale, zscore_scale
 )
 from core.transformations import (
@@ -489,11 +489,25 @@ def show_numeric_tab(df):
         with col3:
             st.metric("Unique", df[outlier_col].nunique())
         
-        # Detect outliers
-        outliers_iqr = detect_outliers_iqr(df, outlier_col)
+        # Outlier method selection
+        method = st.radio(
+            "Detection method:",
+            ["IQR (1.5 * IQR)", "Z-Score (Standard Deviations)"],
+            key="outlier_method"
+        )
         
-        if len(outliers_iqr) > 0:
-            st.warning(f"⚠️ Found {len(outliers_iqr)} outliers using IQR method!")
+        z_threshold = 3.0
+        if method == "Z-Score (Standard Deviations)":
+            z_threshold = st.slider("Z-Score Threshold:", 1.0, 5.0, 3.0, 0.5)
+
+        # Detect outliers
+        if method == "IQR (1.5 * IQR)":
+            outliers = detect_outliers_iqr(df, outlier_col)
+        else:
+            outliers = detect_outliers_zscore(df, outlier_col, threshold=z_threshold)
+        
+        if len(outliers) > 0:
+            st.warning(f"⚠️ Found {len(outliers)} outliers using {method} method!")
             
             action = st.radio(
                 "Choose action:",

@@ -2,21 +2,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;700&display=swap');
 
 :root {
-  --primary-color: #6C5CE7;
-  --secondary-color: #FD79A8;
-  --accent-color: #00CEC9;
-  --bg-color: #F9FAFB;
-  --text-main: #2D3436;
+    --primary-color: #6C5CE7;
+    --secondary-color: #FD79A8;
+    --accent-color: #00CEC9;
+    --bg-color: #F9FAFB;
+    --text-main: #2D3436;
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
-h1, h2, h3 {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700;
-  color: #2D3436;
+h1,
+h2,
+h3 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    color: #2D3436;
 }
 
 /* Glassmorphism Cards */
@@ -38,16 +40,24 @@ section[data-testid="stSidebar"] {
 }
 
 @keyframes gradientBG {
-	0% { background-position: 0% 50%; }
-	50% { background-position: 100% 50%; }
-	100% { background-position: 0% 50%; }
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 /* Sidebar Text & Nav Labels */
-[data-testid="stSidebarNav"] span, 
-[data-testid="stSidebar"] h1, 
-[data-testid="stSidebar"] h2, 
-[data-testid="stSidebar"] h3, 
+[data-testid="stSidebarNav"] span,
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
 [data-testid="stSidebar"] p {
     color: #f1f5f9 !important;
 }
@@ -76,13 +86,13 @@ section[data-testid="stSidebar"] {
 }
 
 /* Button Improvements */
-.stButton > button {
+.stButton>button {
     border-radius: 8px !important;
     font-weight: 600 !important;
     transition: all 0.3s ease !important;
 }
 
-.stButton > button:hover {
+.stButton>button:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
 }
@@ -114,8 +124,15 @@ section[data-testid="stSidebar"] {
 
 /* Animation for cards */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .suggestion-card {
@@ -141,4 +158,42 @@ section[data-testid="stSidebar"] {
     border-left: 5px solid #6c5ce7;
     padding: 24px;
     border-radius: 15px;
+}
+
+/* Styled Dashboard Buttons */
+.stButton>button[kind="secondary"] {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #f1f5f9 !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    transition: all 0.3s ease !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.stButton>button[kind="secondary"]:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: #6c5ce7 !important;
+    transform: translateY(-3px) !important;
+    color: #ffffff !important;
+}
+
+.stat-tile {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.stat-tile:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #6c5ce7;
+    transform: translateY(-5px);
 }

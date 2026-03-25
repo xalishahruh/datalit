@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 from services import dataset_manager, suggestion_engine
-from core import ai_assistant, transformations
+from core import ai_assistant, transformations, nl_processor
 
 # Page Config
 st.set_page_config(page_title="DataLit | AI Assistant", page_icon="🤖", layout="wide")
@@ -75,21 +75,59 @@ st.divider()
 
 # --- Manual Insights Dashboard (Stats for each element) ---
 st.subheader("📊 Manual Data Insights")
-with st.expander("🔎 Explore Column-Level Statistics", expanded=False):
-    cols = st.columns(4)
-    for i, col_name in enumerate(df.columns):
-        with cols[i % 4]:
-            dtype = str(df[col_name].dtype)
-            nulls = df[col_name].isna().sum()
-            uniques = df[col_name].nunique()
+st.caption("Click a column below to see deeper insights and statistics.")
+
+if "selected_col" not in st.session_state:
+    st.session_state["selected_col"] = None
+
+# Grid Dashboard of pressable tiles
+cols = st.columns(4)
+for i, col_name in enumerate(df.columns):
+    with cols[i % 4]:
+        dtype = str(df[col_name].dtype)
+        # Using button with a multi-line format
+        if st.button(f"**{col_name}**\n\n{dtype}", key=f"btn_{col_name}", use_container_width=True, type="secondary"):
+            st.session_state["selected_col"] = col_name
+
+# Detailed Insight Pane
+if st.session_state["selected_col"]:
+    sel_col = st.session_state["selected_col"]
+    with st.container():
+        st.markdown(f"""
+            <div style="background-color: rgba(108, 92, 231, 0.1); border: 1px solid #6c5ce7; padding: 25px; border-radius: 15px; margin-top: 20px;">
+                <h3 style="margin:0; color: #6c5ce7;">Detailed Insight: {sel_col}</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        detail_col1, detail_col2, detail_col3 = st.columns(3)
+        with detail_col1:
+            st.write("**Core Statistics**")
+            st.write(f"- Data type: `{df[sel_col].dtype}`")
+            st.write(f"- Unique values: `{df[sel_col].nunique()}`")
+            st.write(f"- Non-null count: `{df[sel_col].count()}`")
+            st.write(f"- Missing values: `{df[sel_col].isna().sum()}`")
             
-            st.markdown(f"""
-                <div style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
-                    <h4 style="margin: 0; font-size: 0.9rem; color: #6c5ce7;">{col_name}</h4>
-                    <p style="margin: 5px 0 0 0; font-size: 0.8rem; opacity: 0.7;">Type: {dtype}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; opacity: 0.7;">Nulls: {nulls} | Uniques: {uniques}</p>
-                </div>
-            """, unsafe_allow_html=True)
+        with detail_col2:
+            st.write("**Top Values**")
+            top_v = df[sel_col].value_counts().head(5)
+            st.dataframe(top_v, use_container_width=True)
+            
+        with detail_col3:
+            if pd.api.types.is_numeric_dtype(df[sel_col]):
+                st.write("**Numeric Profile**")
+                st.write(f"- Mean: `{df[sel_col].mean():.2f}`")
+                st.write(f"- Median: `{df[sel_col].median():.2f}`")
+                st.write(f"- Outliers (IQR): `{len(df[(df[sel_col] < df[sel_col].quantile(0.25) - 1.5*(df[sel_col].quantile(0.75)-df[sel_col].quantile(0.25))) | (df[sel_col] > df[sel_col].quantile(0.75) + 1.5*(df[sel_col].quantile(0.75)-df[sel_col].quantile(0.25)))])}`")
+            else:
+                st.write("**Categorical Profile**")
+                st.write(f"- Most frequent: `{df[sel_col].mode().iloc[0] if not df[sel_col].mode().empty else 'N/A'}`")
+                st.write(f"- Least frequent: `{df[sel_col].value_counts().tail(1).index[0]}`")
+
+        if st.button("Close Deep Insight"):
+            st.session_state["selected_col"] = None
+            st.rerun()
+
+st.write("") # Spacer
 
 def display_beautiful_insights(text):
     """Parses and renders AI insights using dashboard UI elements."""
@@ -142,6 +180,53 @@ def display_beautiful_insights(text):
                 st.markdown(f"""<div class="insight-card">{rec}</div>""", unsafe_allow_html=True)
         else:
             st.info("No specific recommendations.")
+
+# --- NEW: NL Command Interface ---
+st.divider()
+st.subheader("⌨️ Natural Language Commands (Beta)")
+st.caption("Type commands like 'drop column age' or 'remove duplicates' to apply transformations instantly.")
+
+with st.container():
+    col_nl1, col_nl2 = st.columns([4, 1])
+    with col_nl1:
+        nl_cmd = st.text_input("Enter command:", placeholder="e.g., fill missing in Age with median", key="nl_input")
+    with col_nl2:
+        if st.button("Execute", type="primary", use_container_width=True) and nl_cmd:
+            try:
+                new_df, op, params, aff_cols = nl_processor.parse_and_execute(df, nl_cmd)
+                dataset_manager.add_transformation(op, params, aff_cols, new_df)
+                st.success(f"✅ Executed: {op}")
+                time.sleep(0.5)
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ {str(e)}")
+
+# --- NEW: Data Dictionary ---
+st.divider()
+st.subheader("📖 Automatic Data Dictionary")
+if st.button("Generate Schema Overview", type="secondary"):
+    with st.spinner("Compiling data schema..."):
+        schema_data = []
+        for col in df.columns:
+            dtype = str(df[col].dtype)
+            missing = df[col].isna().sum()
+            missing_pct = (missing / len(df)) * 100
+            unique = df[col].nunique()
+            
+            # Simple description based on dtype
+            desc = "Categorical / Text" if dtype == 'object' else "Numeric / Quantitative"
+            if "datetime" in dtype: desc = "Temporal / Date"
+            
+            schema_data.append({
+                "Column": col,
+                "Type": dtype,
+                "Missing %": f"{missing_pct:.1f}%",
+                "Unique Values": unique,
+                "Sample Value": str(df[col].dropna().iloc[0]) if not df[col].dropna().empty else "N/A",
+                "Description": desc
+            })
+        
+        st.dataframe(pd.DataFrame(schema_data), use_container_width=True, hide_index=True)
 
 # --- Suggestion Feed ---
 st.subheader("💡 Smart Suggestions")

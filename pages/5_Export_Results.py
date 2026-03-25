@@ -4,6 +4,7 @@ import json
 import io
 import datetime
 from services.dataset_manager import get_dataset, dataset_exists, init_manager
+from services import export_service
 from utils.ui_utils import apply_custom_styles
 
 st.set_page_config(page_title="Export Results", layout="wide")
@@ -110,3 +111,20 @@ with col3:
         mime="application/json",
         use_container_width=True
     )
+
+# --- Section 3: Production Pipeline ---
+st.markdown("---")
+st.subheader("⚙️ Production Pipeline")
+st.write("Export a standalone Python script that reproduces all these steps on new data.")
+
+if st.button("Generate Python Pipeline", type="primary", use_container_width=True):
+    with st.spinner("Generating pipeline script..."):
+        python_code = export_service.generate_python_script(recipe_log)
+        st.code(python_code, language="python")
+        st.download_button(
+            label="Download Pipeline Script (.py)",
+            data=python_code,
+            file_name=f"datalit_pipeline_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.py",
+            mime="text/x-python",
+            use_container_width=True
+        )

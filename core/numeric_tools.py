@@ -36,3 +36,8 @@ def zscore_scale(df, columns):
     scaler = StandardScaler()
     df[columns] = scaler.fit_transform(df[columns])
     return df
+
+def detect_outliers_zscore(df, column, threshold=3):
+    """Detect outliers using Z-score method."""
+    z_scores = (df[column] - df[column].mean()) / df[column].std()
+    return df[np.abs(z_scores) > threshold]

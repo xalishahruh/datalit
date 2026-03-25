@@ -27,22 +27,28 @@ st.caption("Upload your raw dataset to explore its structure, statistics, and qu
 st.divider()
 
 # Upload Section
-col_up1, col_up2 = st.columns([2, 1])
+up_tab1, up_tab2 = st.tabs(["📁 File Upload", "🌐 Google Sheets"])
 
-with col_up1:
-    uploaded_file = st.file_uploader(
-        "Upload your dataset (CSV, Excel, or JSON)",
-        type=["csv", "xlsx", "json"],
-        key=f"uploader_{st.session_state.get('uploader_key', 0)}"
-    )
+with up_tab1:
+    col_up1, col_up2 = st.columns([2, 1])
+    with col_up1:
+        uploaded_file = st.file_uploader(
+            "Upload your dataset (CSV, Excel, or JSON)",
+            type=["csv", "xlsx", "json"],
+            key=f"uploader_{st.session_state.get('uploader_key', 0)}"
+        )
+    with col_up2:
+        if dataset_exists():
+            with st.expander("🗑️ Reset Session", expanded=False):
+                st.warning("All uploaded data and transformations will be cleared.")
+                if st.button("Reset Everything", type="primary", use_container_width=True):
+                    reset_session()
+                    st.rerun()
 
-with col_up2:
-    if dataset_exists():
-        with st.expander("🗑️ Reset Session", expanded=False):
-            st.warning("All uploaded data and transformations will be cleared.")
-            if st.button("Reset Everything", type="primary", use_container_width=True):
-                reset_session()
-                st.rerun()
+with up_tab2:
+    gs_url = st.text_input("Paste Google Sheets Share Link:", placeholder="https://docs.google.com/spreadsheets/d/...")
+    st.caption("Ensure the sheet is set to 'Anyone with the link can view'.")
+    load_gs = st.button("Connect & Load Sheet", type="primary")
 
 if uploaded_file is not None:
     try:
@@ -56,6 +62,18 @@ if uploaded_file is not None:
                 st.rerun()
     except Exception as e:
         st.error(f"Failed to load dataset: {e}")
+
+if load_gs and gs_url:
+    try:
+        with st.spinner("Connecting to Google Sheets..."):
+            df = load_dataset(gs_url, "gsheets")
+            store_dataset(df)
+            st.session_state["last_uploaded"] = "Google Sheet"
+            st.success("Successfully loaded Google Sheet!")
+            st.rerun()
+    except Exception as e:
+        st.error(f"Failed to load Google Sheet: {e}")
+
 
 # Overview Section
 if dataset_exists():
