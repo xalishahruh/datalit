@@ -16,6 +16,7 @@ from services.dataset_manager import (
     init_manager,
     reset_session
 )
+from core.validation import validate_dataset_constraints
 
 # Page Config
 st.set_page_config(page_title="DataLit | Data Overview", page_icon="📂", layout="wide")
@@ -102,7 +103,6 @@ if up_tab3 and locals().get('load_sample'):
 # Overview Section
 if dataset_exists():
     df = get_dataset()
-    from core.validation import validate_dataset_constraints
     
     # Dataset Constraints Warnings
     warnings = validate_dataset_constraints(df)
