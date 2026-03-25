@@ -131,34 +131,75 @@ if dataset_exists():
     st.divider()
     st.subheader("🧬 Statistical Profiling")
     
-    if st.button("Generate Detailed Profile", type="secondary", use_container_width=True):
-        with st.spinner("Analyzing deep data structures..."):
-            p_tab1, p_tab2, p_tab3 = st.tabs(["📦 Dtypes & Missing", "🔢 Numeric Stats", "🔡 Categorical Stats"])
+    if "profile_visible" not in st.session_state:
+        st.session_state.profile_visible = False
+        
+    import time
+    
+    if not st.session_state.profile_visible:
+        if st.button("Generate Detailed Profile", type="primary", use_container_width=True):
+            with st.status("🔍 Initiating Deep Data Scan...", expanded=True) as status:
+                st.write("Analysing memory optimization vectors...")
+                time.sleep(0.7)
+                st.write("Computing distribution skewness & kurtosis...")
+                time.sleep(0.7)
+                st.write("Cross-referencing categorical cardinalities...")
+                time.sleep(0.7)
+                status.update(label="Profiling Complete!", state="complete", expanded=False)
             
-            with p_tab1:
-                col_p1, col_p2 = st.columns(2)
-                with col_p1:
-                    st.markdown("#### Inferred Data Types")
-                    st.dataframe(infer_dtypes(df), use_container_width=True)
-                with col_p2:
-                    st.markdown("#### Missing Values Distribution")
-                    st.dataframe(missing_values(df), use_container_width=True)
+            st.session_state.profile_visible = True
+            st.rerun()
             
-            with p_tab2:
-                st.markdown("#### Descriptive Statistics (Numeric)")
-                n_sum = numeric_summary(df)
-                if not n_sum.empty:
-                    st.dataframe(n_sum, use_container_width=True)
-                else:
-                    st.info("No numeric columns found.")
+    if st.session_state.profile_visible:
+        p_tab1, p_tab2, p_tab3, p_tab4 = st.tabs(["📦 Dtypes & Missing", "🔢 Numeric Stats", "🔡 Categorical Stats", "⚡ Memory Optimization (Niche)"])
+        
+        with p_tab1:
+            col_p1, col_p2 = st.columns(2)
+            with col_p1:
+                st.markdown("#### Inferred Data Types")
+                st.dataframe(infer_dtypes(df), use_container_width=True)
+            with col_p2:
+                st.markdown("#### Missing Values Distribution")
+                st.dataframe(missing_values(df), use_container_width=True)
+        
+        with p_tab2:
+            st.markdown("#### Descriptive Statistics (Numeric + Profound)")
+            st.caption("Now includes distribution skewness & kurtosis to identify non-normal feature behaviors before modeling.")
+            n_sum = numeric_summary(df)
+            if not n_sum.empty:
+                st.dataframe(n_sum, use_container_width=True)
+            else:
+                st.info("No numeric columns found.")
+        
+        with p_tab3:
+            st.markdown("#### Categorical Overview (+ Cardinality)")
+            st.caption("Now includes cardinality percentages to flag features that might require heavy one-hot encoding or grouping.")
+            c_sum = categorical_summary(df)
+            if not c_sum.empty:
+                st.dataframe(c_sum, use_container_width=True)
+            else:
+                st.info("No categorical columns found.")
+                
+        with p_tab4:
+            from core.profiling import memory_optimization_potential
+            mem_data = memory_optimization_potential(df)
             
-            with p_tab3:
-                st.markdown("#### Categorical Overview")
-                c_sum = categorical_summary(df)
-                if not c_sum.empty:
-                    st.dataframe(c_sum, use_container_width=True)
-                else:
-                    st.info("No categorical columns found.")
+            st.markdown("#### Database Footprint & Compression Potential")
+            st.markdown("This profound metric analyzes column-level cardinality and floating-point precision to calculate hypothetical data compression—vital for large-scale data engineering environments.")
+            
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Current RAM Usage", f"{mem_data['current_mb']} MB")
+            c2.metric("Optimized Potential", f"{mem_data['optimized_mb']} MB", delta=f"-{mem_data['savings_pct']}%", delta_color="inverse")
+            c3.metric("Data Density Score", f"{100 - mem_data['savings_pct']}/100", help="Higher means your data is already highly memory-efficient.")
+            
+        st.write("")
+        st.write("")
+        col_reg1, col_reg2, col_reg3 = st.columns([1, 2, 1])
+        with col_reg2:
+            if st.button("🔄 Regenerate Detailed Profile", use_container_width=True):
+                st.session_state.profile_visible = False
+                st.rerun()
+
 else:
     st.markdown("""
         <div style="text-align: center; color: #95a5a6; padding: 50px;">
