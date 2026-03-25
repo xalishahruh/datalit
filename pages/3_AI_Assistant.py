@@ -23,14 +23,24 @@ df = dataset_manager.get_dataset()
 # Sidebar Settings
 with st.sidebar:
     st.header("⚙️ AI Configuration")
-    enable_ai = st.toggle("Enable External AI Insights", value=False, help="Connect to OpenAI for deep dataset analysis")
+    enable_ai = st.toggle("Enable External AI Insights", value=False, help="Connect to an LLM provider for deep dataset analysis and natural language processing.")
     
     if enable_ai:
-        api_key = st.text_input("OpenAI API Key", type="password", placeholder="sk-...")
-        ai_model = st.selectbox("Preferred Model", ["gpt-4o-mini", "gpt-4o"], index=0)
+        ai_provider = st.selectbox("AI Provider", ["Groq", "OpenAI"], index=0)
+        
+        if ai_provider == "Groq":
+            api_base_url = st.text_input("Base URL", value="https://api.groq.com/openai/v1")
+            api_key = st.text_input("Groq API Key", type="password", placeholder="gsk-...")
+            ai_model = st.selectbox("Preferred Model", ["llama-3.3-70b-versatile", "mixtral-8x7b-32768", "llama3-8b-8192"], index=0)
+        else:
+            api_base_url = st.text_input("Base URL", value="https://api.openai.com/v1")
+            api_key = st.text_input("OpenAI API Key", type="password", placeholder="sk-...")
+            ai_model = st.selectbox("Preferred Model", ["gpt-4o-mini", "gpt-4o"], index=0)
     else:
         api_key = None
-        ai_model = "gpt-4o-mini"
+        ai_provider = "Groq"
+        api_base_url = "https://api.groq.com/openai/v1"
+        ai_model = "llama-3.3-70b-versatile"
     
     st.divider()
     if st.button("🔄 Reset Suggestions", use_container_width=True):
@@ -213,20 +223,63 @@ with st.expander("📖 View Available Commands & Dataset Examples"):
             st.code(f"clean text in {cat_cols[0]}")
             st.code(f"encode {cat_cols[-1]}")
 
+if "pending_nl_transformation" not in st.session_state:
+    st.session_state["pending_nl_transformation"] = None
+
 with st.container():
     col_nl1, col_nl2 = st.columns([4, 1])
     with col_nl1:
         nl_cmd = st.text_input("Enter command:", placeholder=f"e.g., drop column {all_cols[-1] if all_cols else 'age'}", key="nl_input")
     with col_nl2:
-        if st.button("Execute", type="primary", use_container_width=True) and nl_cmd:
+        btn_label = "Generate Proposal ✨" if enable_ai else "Execute Command"
+        if st.button(btn_label, type="primary", use_container_width=True) and nl_cmd:
+            if enable_ai:
+                with st.spinner("AI is analyzing your command..."):
+                    try:
+                        proposed_json = nl_processor.parse_nl_to_json(df, nl_cmd, api_key, ai_model, api_base_url)
+                        if not proposed_json.get("steps"):
+                            st.warning("AI could not extract any steps from your command.")
+                        else:
+                            st.session_state["pending_nl_transformation"] = {
+                                "json": proposed_json,
+                                "cmd": nl_cmd
+                            }
+                    except Exception as e:
+                        st.error(f"❌ AI Parsing Error: {str(e)}")
+            else:
+                try:
+                    new_df, op, params, aff_cols = nl_processor.parse_and_execute(df, nl_cmd)
+                    dataset_manager.add_transformation(op, params, aff_cols, new_df)
+                    st.success(f"✅ Executed: {op}")
+                    time.sleep(0.5)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"❌ {str(e)}")
+
+if st.session_state["pending_nl_transformation"]:
+    st.markdown("---")
+    st.markdown("### 🤖 Review Proposed AI Transformation")
+    pending_data = st.session_state["pending_nl_transformation"]
+    
+    st.json(pending_data["json"])
+    
+    col_app1, col_app2 = st.columns(2)
+    with col_app1:
+        if st.button("✅ Approve & Execute", use_container_width=True, type="primary"):
             try:
-                new_df, op, params, aff_cols = nl_processor.parse_and_execute(df, nl_cmd)
-                dataset_manager.add_transformation(op, params, aff_cols, new_df)
-                st.success(f"✅ Executed: {op}")
-                time.sleep(0.5)
-                st.rerun()
+                with st.spinner("Applying AI transformations..."):
+                    new_df, op, params, aff_cols = nl_processor.execute_nl_json(df, pending_data["json"])
+                    dataset_manager.add_transformation(f"[AI] {op}", params, aff_cols, new_df)
+                    st.success(f"✅ Executed: {op}")
+                    st.session_state["pending_nl_transformation"] = None
+                    time.sleep(0.5)
+                    st.rerun()
             except Exception as e:
-                st.error(f"❌ {str(e)}")
+                st.error(f"❌ Error executing AI steps: {str(e)}")
+    with col_app2:
+        if st.button("❌ Reject & Clear", use_container_width=True):
+            st.session_state["pending_nl_transformation"] = None
+            st.rerun()
 
 # --- NEW: Data Dictionary ---
 st.divider()
@@ -335,7 +388,8 @@ with col_in1:
                 summary, 
                 api_enabled=enable_ai, 
                 api_key=api_key,
-                model=ai_model
+                model=ai_model,
+                base_url=api_base_url
             )
     
     if st.session_state["ai_insights"]:

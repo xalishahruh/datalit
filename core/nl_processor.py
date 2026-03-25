@@ -1,5 +1,7 @@
 import re
 import pandas as pd
+import json
+import openai
 from core import transformations, numeric_tools, categorical_tools, column_ops
 
 def _get_real_col(df, col_query):
@@ -109,3 +111,120 @@ def parse_and_execute(df, command):
             raise ValueError(f"Column '{col}' not found.")
 
     raise ValueError("Command not recognized. Check the available commands in the expander.")
+
+def parse_nl_to_json(df, command, api_key, model, base_url="https://api.groq.com/openai/v1"):
+    schema = []
+    for col in df.columns:
+        schema.append(f"{col} ({df[col].dtype})")
+    schema_str = ", ".join(schema)
+    
+    system_prompt = f"""
+You are a data processing assistant. The user wants to clean a dataset with the following schema:
+{schema_str}
+
+Convert the user's natural language command into a structured JSON array of transformation steps.
+Return ONLY valid JSON, with nothing else. Do not wrap it in markdown block quotes.
+
+Expected format:
+{{
+  "steps": [
+    {{
+      "operation": "fill_missing",  // Supported: "remove_duplicates", "drop_column", "clean_text", "rename_column", "remove_outliers", "one_hot_encode", "drop_missing_rows"
+      "column": "column_name", // if applicable
+      "method": "median", // if applicable (e.g. mean, median, mode)
+      "new_name": "new_col_name" // if applicable (e.g. rename_column)
+    }}
+  ]
+}}
+"""
+    try:
+        client = openai.OpenAI(api_key=api_key, base_url=base_url)
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": command}
+            ],
+            temperature=0.1,
+            response_format={"type": "json_object"}
+        )
+        return json.loads(response.choices[0].message.content)
+    except Exception as e:
+        raise ValueError(f"AI parsing failed: {str(e)}")
+
+def execute_nl_json(df, json_payload):
+    steps = json_payload.get("steps", [])
+    if not steps:
+        raise ValueError("No valid steps parsed from the AI response.")
+        
+    new_df = df.copy()
+    affected_cols_total = []
+    descriptions = []
+    
+    for step in steps:
+        op = step.get("operation")
+        col = step.get("column")
+        
+        real_col = _get_real_col(new_df, col) if col else None
+                
+        if op == "drop_column" and real_col:
+            new_df = column_ops.drop_column(new_df, real_col)
+            affected_cols_total.append(real_col)
+            descriptions.append(f"Drop Column: {real_col}")
+            
+        elif op == "remove_duplicates":
+            new_df = transformations.remove_duplicates(new_df)
+            affected_cols_total.extend(new_df.columns)
+            descriptions.append("Remove Duplicates")
+            
+        elif op == "fill_missing" and real_col:
+            method = step.get("method", "median")
+            if method == "mean":
+                new_df = transformations.fill_numeric(new_df, real_col, "mean")
+            elif method == "median":
+                new_df = transformations.fill_numeric(new_df, real_col, "median")
+            elif method in ["mode", "most_frequent"]:
+                new_df = transformations.fill_mode(new_df, real_col)
+            affected_cols_total.append(real_col)
+            descriptions.append(f"Fill Missing in {real_col} ({method})")
+            
+        elif op == "clean_text" and real_col:
+            new_df = categorical_tools.strip_whitespace(new_df, real_col)
+            new_df = categorical_tools.to_lowercase(new_df, real_col)
+            affected_cols_total.append(real_col)
+            descriptions.append(f"Clean Text in {real_col}")
+            
+        elif op == "rename_column" and real_col:
+            new_name = step.get("new_name")
+            if new_name:
+                new_df = column_ops.rename_column(new_df, real_col, new_name)
+                affected_cols_total.append(new_name)
+                descriptions.append(f"Rename Column: {real_col} to {new_name}")
+                
+        elif op == "remove_outliers" and real_col:
+            new_df = numeric_tools.remove_outliers(new_df, real_col)
+            affected_cols_total.append(real_col)
+            descriptions.append(f"Remove Outliers from {real_col}")
+            
+        elif op == "one_hot_encode" and real_col:
+            new_df = categorical_tools.one_hot_encode(new_df, real_col)
+            affected_cols_total.append(real_col)
+            descriptions.append(f"One-Hot Encode {real_col}")
+            
+        elif op == "drop_missing_rows":
+            if real_col:
+                new_df = transformations.drop_missing_rows(new_df, [real_col])
+                affected_cols_total.append(real_col)
+                descriptions.append(f"Drop Missing Rows in {real_col}")
+            else:
+                new_df = transformations.drop_missing_rows(new_df)
+                affected_cols_total.extend(new_df.columns)
+                descriptions.append("Drop Missing Rows (All columns)")
+        else:
+            raise ValueError(f"Could not apply step '{op}' to column '{col}'. Please check your command.")
+            
+    # Remove duplicates from affected cols
+    affected_cols_total = list(dict.fromkeys(affected_cols_total))
+    final_op_name = " & ".join(descriptions)
+    
+    return new_df, final_op_name, {"steps": steps}, affected_cols_total

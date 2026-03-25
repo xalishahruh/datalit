@@ -32,7 +32,7 @@ def generate_dataset_summary(df):
             
     return summary
 
-def generate_ai_insights(summary, api_enabled=False, api_key=None, model="gpt-4o-mini"):
+def generate_ai_insights(summary, api_enabled=False, api_key=None, model="gpt-4o-mini", base_url="https://api.openai.com/v1"):
     """
     Sends the dataset summary to an LLM and returns structured quality insights.
     If api_enabled is False or api_key is missing, it returns demo insights.
@@ -53,7 +53,7 @@ To see live ML-assisted results dynamically tailored to your fields, provide an 
 """
 
     try:
-        client = openai.OpenAI(api_key=api_key)
+        client = openai.OpenAI(api_key=api_key, base_url=base_url)
         
         system_prompt = """
         You are an expert Data Scientist. Analyze the dataset summary and provide:
