@@ -225,6 +225,10 @@ def display_beautiful_insights(text):
     """Parses and renders AI insights using dashboard UI elements."""
     if not text:
         return
+    
+    if "❌ Error" in text:
+        st.error(text.replace("### ", ""))
+        return
         
     parts = {}
     current_key = None
