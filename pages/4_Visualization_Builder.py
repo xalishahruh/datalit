@@ -57,6 +57,19 @@ ctrl_col, plot_col = st.columns([1, 2])
 with ctrl_col:
     st.subheader("🛠️ Chart Configuration")
     
+    # Rule-Based Chart Recommendations
+    with st.expander("💡 Chart Recommendations"):
+        st.write("Based on your dataset's schema, we recommend:")
+        if len(num_cols) >= 2:
+            st.markdown(f"- **Scatter Plot**: Good for comparing two continuous numeric variables (e.g., `{num_cols[0]}` vs `{num_cols[1]}`).")
+        if len(num_cols) >= 1 and len(cat_cols) >= 1:
+            st.markdown(f"- **Box Plot / Grouped Bar Chart**: Good for comparing a numeric variable (`{num_cols[0]}`) across categories (`{cat_cols[0]}`).")
+        has_datetime = any(pd.api.types.is_datetime64_any_dtype(df[col]) for col in df.columns)
+        if has_datetime:
+            st.markdown("- **Line Chart**: Highly recommended to observe trends over time.")
+        if len(num_cols) >= 3:
+            st.markdown("- **Correlation Heatmap**: Great for exploring relationships between multiple numeric features.")
+    
     chart_type = st.selectbox(
         "Chart Type",
         [
