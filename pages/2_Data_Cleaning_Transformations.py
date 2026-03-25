@@ -396,12 +396,15 @@ def show_categorical_tab(df):
                 if new_val != str(val):
                     mapping[val] = new_val
         
+        unmatched_action = st.radio("Unmatched Values:", ["Keep unchanged", "Convert to 'Other'"], key=f"unmatched_{map_col}")
+        
         if mapping and st.button("🔄 Apply Mapping", use_container_width=True):
-            new_df = map_categories(df.copy(), map_col, mapping)
+            action_val = "other" if unmatched_action == "Convert to 'Other'" else "keep"
+            new_df = map_categories(df.copy(), map_col, mapping, unmatched_action=action_val)
             
             add_transformation(
                 "Category Mapping",
-                {"column": map_col, "mapping": mapping},
+                {"column": map_col, "mapping": mapping, "unmatched": action_val},
                 [map_col],
                 new_df
             )
