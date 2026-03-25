@@ -46,7 +46,8 @@ def categorical_summary(df):
         return pd.DataFrame()
         
     desc = cat_df.describe()
-    cardinality = (desc.loc["unique"].astype(float) / len(cat_df) * 100).round(2).astype(str) + "%"
+    unique_counts = pd.to_numeric(desc.loc["unique"], errors='coerce')
+    cardinality = (unique_counts / len(cat_df) * 100).astype(float).round(2).astype(str) + "%"
     desc.loc["cardinality (%)"] = cardinality
     return desc
 
