@@ -12,8 +12,11 @@ def to_titlecase(df, column):
     df[column] = df[column].astype(str).str.title()
     return df
 
-def map_categories(df, column, mapping):
-    df[column] = df[column].map(mapping).fillna(df[column])
+def map_categories(df, column, mapping, unmatched_action="keep"):
+    if unmatched_action == "other":
+        df[column] = df[column].map(mapping).fillna("Other")
+    else:
+        df[column] = df[column].map(mapping).fillna(df[column])
     return df
 
 def group_rare_categories(df, column, threshold):
