@@ -52,11 +52,23 @@ with st.sidebar:
                     """)
             
             api_base_url = st.text_input("Base URL", value="https://api.groq.com/openai/v1")
-            api_key = st.text_input("Groq API Key", type="password", placeholder="gsk-...")
+            
+            if "groq_api_key_val" not in st.session_state:
+                st.session_state.groq_api_key_val = ""
+                
+            def set_default_groq():
+                st.session_state.groq_api_key_val = "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"
+                
+            st.button("Load Default API Key", on_click=set_default_groq, type="secondary", use_container_width=True)
+            api_key = st.text_input("Groq API Key", type="password", key="groq_api_key_val", placeholder="gsk-...")
             ai_model = st.selectbox("Preferred Model", ["llama-3.3-70b-versatile", "mixtral-8x7b-32768", "llama3-8b-8192"], index=0)
         else:
             api_base_url = st.text_input("Base URL", value="https://api.openai.com/v1")
-            api_key = st.text_input("OpenAI API Key", type="password", placeholder="sk-...")
+            
+            if "oai_api_key_val" not in st.session_state:
+                st.session_state.oai_api_key_val = ""
+                
+            api_key = st.text_input("OpenAI API Key", type="password", key="oai_api_key_val", placeholder="sk-...")
             ai_model = st.selectbox("Preferred Model", ["gpt-4o-mini", "gpt-4o"], index=0)
     else:
         api_key = None
