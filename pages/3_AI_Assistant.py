@@ -95,7 +95,7 @@ if st.session_state["selected_col"]:
     sel_col = st.session_state["selected_col"]
     with st.container():
         st.markdown(f"""
-            <div style="background-color: rgba(108, 92, 231, 0.1); border: 1px solid #6c5ce7; padding: 25px; border-radius: 15px; margin-top: 20px;">
+            <div style="background-color: rgba(108, 92, 231, 0.1); border: 1px solid #6c5ce7; padding: 25px; border-radius: 15px; margin-top: 20px; margin-bottom: 35px;">
                 <h3 style="margin:0; color: #6c5ce7;">Detailed Insight: {sel_col}</h3>
             </div>
         """, unsafe_allow_html=True)
@@ -185,12 +185,38 @@ def display_beautiful_insights(text):
 # --- NEW: NL Command Interface ---
 st.divider()
 st.subheader("⌨️ Natural Language Commands (Beta)")
-st.caption("Type commands like 'drop column age' or 'remove duplicates' to apply transformations instantly.")
+st.caption("Type commands to apply transformations instantly.")
+
+with st.expander("📖 View Available Commands & Dataset Examples"):
+    st.markdown("Here are the natural language commands you can execute right now. The examples below use your actual dataset's columns!")
+    
+    all_cols = list(df.columns)
+    num_cols = df.select_dtypes(include="number").columns.tolist()
+    cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+    
+    col_ex1, col_ex2 = st.columns(2)
+    with col_ex1:
+        st.markdown("**1. Structure Operations**")
+        st.code("remove duplicates")
+        if all_cols:
+            st.code(f"drop column {all_cols[-1]}")
+            st.code(f"drop missing in {all_cols[0]}")
+            if len(all_cols) >= 2:
+                st.code(f"rename {all_cols[0]} to new_name")
+            
+    with col_ex2:
+        st.markdown("**2. Cleaning Operations**")
+        if num_cols:
+            st.code(f"fill missing in {num_cols[0]} with median")
+            st.code(f"remove outliers from {num_cols[-1]}")
+        if cat_cols:
+            st.code(f"clean text in {cat_cols[0]}")
+            st.code(f"encode {cat_cols[-1]}")
 
 with st.container():
     col_nl1, col_nl2 = st.columns([4, 1])
     with col_nl1:
-        nl_cmd = st.text_input("Enter command:", placeholder="e.g., fill missing in Age with median", key="nl_input")
+        nl_cmd = st.text_input("Enter command:", placeholder=f"e.g., drop column {all_cols[-1] if all_cols else 'age'}", key="nl_input")
     with col_nl2:
         if st.button("Execute", type="primary", use_container_width=True) and nl_cmd:
             try:

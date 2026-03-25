@@ -39,20 +39,18 @@ def generate_ai_insights(summary, api_enabled=False, api_key=None, model="gpt-4o
     """
     if not api_enabled or not api_key:
         return f"""
-        ### 🤖 Data Quality Insights (Demo Mode)
-        
-        To see live AI-generated results, please provide your **OpenAI API Key** in the sidebar.
-        
-        **Preliminary Observations:**
-        - **Scale**: A dataset of {summary.split('rows x')[0].split('Dimensions: ')[1]} rows provides sufficient statistical significance for most analysis.
-        - **Missing Values**: Total missingness is {summary.split('Global Missing Values: ')[1].split('\\n')[0]}. High missingness in key features may require imputation strategies (mean/median for numeric, mode for categorical).
-        - **Integrity**: {summary.split('- Duplicate Rows: ')[1].split('\\n')[0]} duplicate rows found. Removing these is highly recommended to avoid bias.
-        
-        **Recommendations:**
-        1. Review the "AI Assistant" suggestions feed to apply one-click fixes.
-        2. Inspect outliers in numeric columns using the **Data Profiler**.
-        3. Standardize categorical text (casing/whitespace) to improve grouping.
-        """
+[SUMMARY]
+To see live ML-assisted results dynamically tailored to your fields, provide an **OpenAI API Key** in the sidebar. Below is a basic rule-based analysis.
+
+[RISKS]
+- **Missing Values Potential Bias**: Total missingness is {summary.split('Global Missing Values: ')[1].split(chr(10))[0]}. High missingness in key features will heavily skew aggregate behaviors!
+- **Data Duplication Impact**: Found {summary.split('- Duplicate Rows: ')[1].split(chr(10))[0]} duplicated rows which can artificially inflate metric performance and cause bias.
+
+[RECOMMENDATIONS]
+- **Immediate Action**: Use the "remove duplicates" natural language command right now to instantly clean structural integrity.
+- **Imputation Strategy**: Navigate to the Cleaning Studio and replace missing quantitative values with the column Median to shield against outliers.
+- **Categorical Pruning**: Use the "Group Rare Categories" transformation to bin chaotic string labels into 'Other', standardizing the visualization dashboard!
+"""
 
     try:
         client = openai.OpenAI(api_key=api_key)
