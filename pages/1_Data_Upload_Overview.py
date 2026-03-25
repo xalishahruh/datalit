@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from utils.ui_utils import apply_custom_styles
 from core.loader import load_dataset
 from core.profiling import (
@@ -27,7 +28,7 @@ st.caption("Upload your raw dataset to explore its structure, statistics, and qu
 st.divider()
 
 # Upload Section
-up_tab1, up_tab2 = st.tabs(["📁 File Upload", "🌐 Google Sheets"])
+up_tab1, up_tab2, up_tab3 = st.tabs(["📁 File Upload", "🌐 Google Sheets", "🎁 Sample Datasets"])
 
 with up_tab1:
     col_up1, col_up2 = st.columns([2, 1])
@@ -49,6 +50,16 @@ with up_tab2:
     gs_url = st.text_input("Paste Google Sheets Share Link:", placeholder="https://docs.google.com/spreadsheets/d/...")
     st.caption("Ensure the sheet is set to 'Anyone with the link can view'.")
     load_gs = st.button("Connect & Load Sheet", type="primary")
+
+with up_tab3:
+    st.markdown("Load a built-in dataset to explore DataLit's capabilities without needing your own files.")
+    sample_choice = st.selectbox("Select a Sample Dataset:", ["Titanic Insights", "Penguins Ecosystem"])
+    
+    col_btn, col_info = st.columns([1, 4])
+    with col_btn:
+        load_sample = st.button("Load Sample", type="primary", help="Instantly load this standardized sample dataset into the app for exploration and cleaning.")
+    with col_info:
+        st.info("💡 **Tip:** Use these datasets to test missing value imputation, rule-based column operations, and AI visualizations.")
 
 if uploaded_file is not None:
     try:
@@ -74,10 +85,31 @@ if load_gs and gs_url:
     except Exception as e:
         st.error(f"Failed to load Google Sheet: {e}")
 
+if up_tab3 and locals().get('load_sample'):
+    try:
+        with st.spinner("Loading sample dataset..."):
+            if sample_choice == "Titanic Insights":
+                df = pd.read_csv("https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv")
+            else:
+                df = pd.read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/master/inst/extdata/penguins.csv")
+            store_dataset(df)
+            st.session_state["last_uploaded"] = f"Sample: {sample_choice}"
+            st.success(f"Successfully loaded '{sample_choice}'!")
+            st.rerun()
+    except Exception as e:
+        st.error(f"Failed to load sample dataset: {e}")
 
 # Overview Section
 if dataset_exists():
     df = get_dataset()
+    from core.validation import validate_dataset_constraints
+    
+    # Dataset Constraints Warnings
+    warnings = validate_dataset_constraints(df)
+    if warnings:
+        with st.expander("⚠️ Dataset Structural Warnings (Checklist Constraints)", expanded=False):
+            for w in warnings:
+                st.warning(w)
     
     # Quick Metrics
     st.subheader("🔍 Dataset Overview")
