@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
+import streamlit.components.v1 as components
 from services import dataset_manager, suggestion_engine
 from core import ai_assistant, transformations, nl_processor
 
@@ -29,6 +30,27 @@ with st.sidebar:
         ai_provider = st.selectbox("AI Provider", ["Groq", "OpenAI"], index=0)
         
         if ai_provider == "Groq":
+            if hasattr(st, "popover"):
+                with st.popover("ℹ️ How to get a Groq API Key"):
+                    st.markdown("""
+                    **Free & Easy Setup:**
+                    1. Go to [console.groq.com/keys](https://console.groq.com/keys)
+                    2. Sign in with Google or GitHub
+                    3. Navigate to **API Keys**
+                    4. Click **Create API Key**
+                    5. Copy the key (`gsk_...`) and paste it below!
+                    """)
+            else:
+                with st.expander("ℹ️ How to get a Groq API Key"):
+                    st.markdown("""
+                    **Free & Easy Setup:**
+                    1. Go to [console.groq.com/keys](https://console.groq.com/keys)
+                    2. Sign in with Google or GitHub
+                    3. Navigate to **API Keys**
+                    4. Click **Create API Key**
+                    5. Copy the key (`gsk_...`) and paste it below!
+                    """)
+            
             api_base_url = st.text_input("Base URL", value="https://api.groq.com/openai/v1")
             api_key = st.text_input("Groq API Key", type="password", placeholder="gsk-...")
             ai_model = st.selectbox("Preferred Model", ["llama-3.3-70b-versatile", "mixtral-8x7b-32768", "llama3-8b-8192"], index=0)
@@ -47,6 +69,47 @@ with st.sidebar:
         st.session_state["dismissed_suggestions"] = []
         st.cache_data.clear()
         st.rerun()
+
+is_ready = str(enable_ai and bool(api_key)).lower()
+components.html(f"""
+    <script>
+    const doc = window.parent.document;
+    let style = doc.getElementById('ai-blink-style');
+    if (!style) {{
+        style = doc.createElement('style');
+        style.id = 'ai-blink-style';
+        style.innerHTML = `
+        @keyframes pulseGreen {{
+            0% {{ box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }}
+            50% {{ box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); background-color: rgba(40, 167, 69, 0.1) !important; color: #28a745 !important; border-color: #28a745 !important; }}
+            100% {{ box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }}
+        }}
+        .blinking-ready {{
+            animation: pulseGreen 2s infinite !important;
+            border-color: #28a745 !important;
+            color: #28a745 !important;
+            font-weight: bold !important;
+            transition: all 0.3s ease;
+        }}
+        `;
+        doc.head.appendChild(style);
+    }}
+    
+    setTimeout(() => {{
+        const isReady = {is_ready};
+        const buttons = doc.querySelectorAll('.stButton button');
+        buttons.forEach(btn => {{
+            if (btn.innerText.includes('Generate Insights') || btn.innerText.includes('Generate Proposal')) {{
+                if (isReady) {{
+                    btn.classList.add('blinking-ready');
+                }} else {{
+                    btn.classList.remove('blinking-ready');
+                }}
+            }}
+        }});
+    }}, 200);
+    </script>
+""", height=0, width=0)
 
 # Layout: 2 Columns for Header metrics
 col1, col2, col3 = st.columns([1, 1, 1])
