@@ -27,9 +27,9 @@ with st.sidebar:
     enable_ai = st.toggle("Enable External AI Insights", value=False, help="Connect to an LLM provider for deep dataset analysis and natural language processing.")
     
     if enable_ai:
-        ai_provider = st.selectbox("AI Provider", ["Groq", "OpenAI"], index=0)
+        ai_provider = st.selectbox("AI Provider", ["Groq (Default)", "OpenAI"], index=0)
         
-        if ai_provider == "Groq":
+        if ai_provider == "Groq (Default)":
             if hasattr(st, "popover"):
                 with st.popover("ℹ️ How to get a Groq API Key"):
                     st.markdown("""
@@ -38,7 +38,9 @@ with st.sidebar:
                     2. Sign in with Google or GitHub
                     3. Navigate to **API Keys**
                     4. Click **Create API Key**
-                    5. Copy the key (`gsk_...`) and paste it below!
+                    5. Copy the key (`gsk_...`)
+                    6. Paste your new key in the box below.
+                    7. **Or**, toggle "Use default Groq API" below to automatically insert DataLit's built-in key!
                     """)
             else:
                 with st.expander("ℹ️ How to get a Groq API Key"):
@@ -48,20 +50,24 @@ with st.sidebar:
                     2. Sign in with Google or GitHub
                     3. Navigate to **API Keys**
                     4. Click **Create API Key**
-                    5. Copy the key (`gsk_...`) and paste it below!
+                    5. Copy the key (`gsk_...`)
+                    6. Paste your new key in the box below.
+                    7. **Or**, toggle "Use default Groq API" below to automatically insert DataLit's built-in key!
                     """)
             
-            api_base_url = st.text_input("Base URL", value="https://api.groq.com/openai/v1")
+            # Read from state upfront
+            use_default = st.session_state.get("use_default_toggle", False)
             
-            if "groq_api_key_val" not in st.session_state:
-                st.session_state.groq_api_key_val = ""
+            if use_default:
+                api_base_url = st.text_input("Base URL", value="https://api.groq.com/openai/v1", disabled=True, key="base_url_default")
+                api_key = st.text_input("Groq API Key", value="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", type="password", disabled=True, key="api_key_default")
+            else:
+                api_base_url = st.text_input("Base URL", value="https://api.groq.com/openai/v1", key="base_url_custom")
+                api_key = st.text_input("Groq API Key", type="password", placeholder="gsk-...", key="api_key_custom")
                 
-            def set_default_groq():
-                st.session_state.groq_api_key_val = "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"
-                
-            st.button("Load Default API Key", on_click=set_default_groq, type="secondary", use_container_width=True)
-            api_key = st.text_input("Groq API Key", type="password", key="groq_api_key_val", placeholder="gsk-...")
             ai_model = st.selectbox("Preferred Model", ["llama-3.3-70b-versatile", "mixtral-8x7b-32768", "llama3-8b-8192"], index=0)
+            
+            st.toggle("Use default Groq API", key="use_default_toggle")
         else:
             api_base_url = st.text_input("Base URL", value="https://api.openai.com/v1")
             
