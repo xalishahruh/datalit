@@ -10,6 +10,7 @@ st.set_page_config(page_title="DataLit | AI Assistant", page_icon="🤖", layout
 # Header
 st.title("🤖 AI Assistant")
 st.caption("Intelligent data cleaning recommendations and AI-driven insights for your dataset.")
+st.warning("⚠️ **Disclaimer:** AI-generated insights and recommendations may be imperfect. Always verify the results before making critical decisions.")
 
 # Check for Dataset
 if not dataset_manager.dataset_exists():
