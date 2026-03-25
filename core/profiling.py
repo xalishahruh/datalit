@@ -70,4 +70,4 @@ def memory_optimization_potential(df):
         "optimized_mb": round(current_mem - savings, 2),
         "savings_pct": round((savings / current_mem) * 100, 1) if current_mem > 0 else 0
     }
-
+
