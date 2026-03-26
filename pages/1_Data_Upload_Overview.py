@@ -54,7 +54,7 @@ with up_tab2:
 
 with up_tab3:
     st.markdown("Load a built-in dataset to explore DataLit's capabilities without needing your own files.")
-    sample_choice = st.selectbox("Select a Sample Dataset:", ["Titanic Insights", "Penguins Ecosystem"])
+    sample_choice = st.selectbox("Select a Sample Dataset:", ["Titanic Insights", "Penguins Ecosystem", "Diamonds Premium (50k+ rows)", "Insurance Analytics (1.3k rows)"])
     
     col_btn, col_info = st.columns([1, 4])
     with col_btn:
@@ -91,8 +91,13 @@ if up_tab3 and locals().get('load_sample'):
         with st.spinner("Loading sample dataset..."):
             if sample_choice == "Titanic Insights":
                 df = pd.read_csv("https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv")
-            else:
+            elif sample_choice == "Penguins Ecosystem":
                 df = pd.read_csv("https://raw.githubusercontent.com/allisonhorst/palmerpenguins/master/inst/extdata/penguins.csv")
+            elif sample_choice == "Diamonds Premium (50k+ rows)":
+                df = pd.read_csv("https://raw.githubusercontent.com/mwaskom/seaborn-data/master/diamonds.csv")
+            elif sample_choice == "Insurance Analytics (1.3k rows)":
+                df = pd.read_csv("https://raw.githubusercontent.com/stedy/Machine-Learning-with-R-datasets/master/insurance.csv")
+            
             store_dataset(df)
             st.session_state["last_uploaded"] = f"Sample: {sample_choice}"
             st.success(f"Successfully loaded '{sample_choice}'!")
