@@ -90,7 +90,7 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 
-is_ready = str(enable_ai and bool(api_key)).lower()
+is_ready = "true" if bool(api_key) else "false"
 components.html(f"""
     <script>
     const doc = window.parent.document;
@@ -119,7 +119,8 @@ components.html(f"""
         const isReady = {is_ready};
         const buttons = doc.querySelectorAll('.stButton button');
         buttons.forEach(btn => {{
-            if (btn.innerText.includes('Generate Insights') || btn.innerText.includes('Generate Proposal')) {{
+            const text = btn.innerText;
+            if (text.includes('Generate Insights') || text.includes('Generate Proposal')) {{
                 if (isReady) {{
                     btn.classList.add('blinking-ready');
                 }} else {{
@@ -127,7 +128,7 @@ components.html(f"""
                 }}
             }}
         }});
-    }}, 200);
+    }}, 400);
     </script>
 """, height=0, width=0)
 
@@ -232,6 +233,11 @@ def display_beautiful_insights(text):
         st.error(text.replace("### ", ""))
         return
         
+    import re
+    def format_insight_text(item):
+        item = re.sub(r'^[*-]\s*', '', item)
+        return re.sub(r'\*\*(.*?)\*\*', r'<span style="color: #2D3436; font-weight: 700;">\1</span>', item)
+    
     parts = {}
     current_key = None
     
@@ -251,7 +257,7 @@ def display_beautiful_insights(text):
 
     # 1. Summary Card
     if "summary" in parts:
-        summary_text = " ".join(parts["summary"])
+        summary_text = format_insight_text(" ".join(parts["summary"]))
         st.markdown(f"""
             <div class="summary-card">
                 <h3 style="margin:0; font-size: 1.2rem; color: #6c5ce7;">Executive Data Health Summary</h3>
@@ -267,7 +273,8 @@ def display_beautiful_insights(text):
         st.markdown("### ⚠️ Critical Risks")
         if "risks" in parts:
             for risk in parts["risks"]:
-                st.markdown(f"""<div class="insight-card">{risk}</div>""", unsafe_allow_html=True)
+                styled_risk = format_insight_text(risk)
+                st.markdown(f"""<div class="insight-card">{styled_risk}</div>""", unsafe_allow_html=True)
         else:
             st.info("No specific risks identified.")
             
@@ -275,7 +282,8 @@ def display_beautiful_insights(text):
         st.markdown("### 🎯 Strategic Actions")
         if "recommendations" in parts:
             for rec in parts["recommendations"]:
-                st.markdown(f"""<div class="insight-card">{rec}</div>""", unsafe_allow_html=True)
+                styled_rec = format_insight_text(rec)
+                st.markdown(f"""<div class="insight-card">{styled_rec}</div>""", unsafe_allow_html=True)
         else:
             st.info("No specific recommendations.")
 
