@@ -236,7 +236,7 @@ def display_beautiful_insights(text):
     import re
     def format_insight_text(item):
         item = re.sub(r'^[*-]\s*', '', item)
-        return re.sub(r'\*\*(.*?)\*\*', r'<span style="color: #2D3436; font-weight: 700;">\1</span>', item)
+        return re.sub(r'\*\*(.*?)\*\*', r'<span style="font-weight: 700;">\1</span>', item)
     
     parts = {}
     current_key = None
@@ -417,7 +417,7 @@ else:
             
             # Use styling for card effect
             st.markdown(f"""
-                <div style="border-left: 5px solid {color}; background-color: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; margin-bottom: 10px;">
+                <div style="border-left: 5px solid {color}; border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); border-right: 1px solid var(--card-border); background-color: rgba(108, 92, 231, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 10px;">
                     <h4 style="margin: 0; color: {color}; text-transform: uppercase; font-size: 0.8rem;">{s['severity']}</h4>
                     <h3 style="margin: 5px 0;">{s['title']}</h3>
                     <p style="margin: 10px 0; opacity: 0.9;">{s['description']}</p>
