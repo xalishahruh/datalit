@@ -7,6 +7,10 @@
     --accent-color: #00CEC9;
     --bg-color: #F9FAFB;
     --text-main: #2D3436;
+    /* New variables for theme stability */
+    --card-border: rgba(108, 92, 231, 0.3); 
+    --card-bg: rgba(108, 92, 231, 0.08); /* Universal tinted glass */
+    --sidebar-bg: #0a0f1e; 
 }
 
 body {
@@ -18,39 +22,27 @@ h2,
 h3 {
     font-family: 'Outfit', sans-serif;
     font-weight: 700;
-    color: #2D3436;
 }
 
 /* Glassmorphism Cards */
-.stMarkdown div[data-testid="stMetricValue"] {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 12px;
-    padding: 1rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+.stMarkdown div[data-testid="stMetricValue"], 
+[data-testid="stMetricValue"] {
+    background: var(--card-bg) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
 }
 
-/* Sidebar Styling - Dark & Animated */
-section[data-testid="stSidebar"] {
-    background: linear-gradient(-45deg, #1e293b, #0f172a, #1e293b);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-@keyframes gradientBG {
-    0% {
-        background-position: 0% 50%;
-    }
-
-    50% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0% 50%;
-    }
+/* Sidebar Styling - Dark, Neutral & Stable */
+section[data-testid="stSidebar"], 
+[data-testid="stSidebar"] > div:first-child,
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+    background: var(--sidebar-bg) !important;
+    background-image: none !important; /* Remove gradient if it causes "blue" complaints */
+    background-color: var(--sidebar-bg) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
 /* Sidebar Text & Nav Labels */
@@ -58,8 +50,10 @@ section[data-testid="stSidebar"] {
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3,
-[data-testid="stSidebar"] p {
-    color: #f1f5f9 !important;
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] .stMarkdown p {
+    color: #f8fafc !important;
 }
 
 [data-testid="stSidebarNav"] li {
@@ -79,7 +73,7 @@ section[data-testid="stSidebar"] {
 }
 
 [data-testid="stSidebarNav"] li a[aria-current="page"] {
-    background-color: rgba(108, 92, 231, 0.15) !important;
+    background-color: rgba(108, 92, 231, 0.25) !important;
     border-left: 4px solid #6c5ce7 !important;
     color: #ffffff !important;
     font-weight: 600 !important;
@@ -140,8 +134,8 @@ section[data-testid="stSidebar"] {
 }
 
 .insight-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(108, 92, 231, 0.05);
+    border: 1px solid var(--card-border);
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 15px;
@@ -149,22 +143,24 @@ section[data-testid="stSidebar"] {
 }
 
 .insight-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(108, 92, 231, 0.3);
+    background: rgba(108, 92, 231, 0.08);
+    border-color: rgba(108, 92, 231, 0.5);
 }
 
 .summary-card {
-    background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(0, 206, 201, 0.1));
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(0, 206, 201, 0.05));
     border-left: 5px solid #6c5ce7;
+    border-top: 1px solid var(--card-border);
+    border-bottom: 1px solid var(--card-border);
+    border-right: 1px solid var(--card-border);
     padding: 24px;
     border-radius: 15px;
 }
 
 /* Styled Dashboard Buttons */
 .stButton>button[kind="secondary"] {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(0, 0, 0, 0.15) !important;
-    color: #2D3436 !important;
+    background: rgba(108, 92, 231, 0.05) !important;
+    border: 1px solid var(--card-border) !important;
     border-radius: 12px !important;
     padding: 20px !important;
     transition: all 0.3s ease !important;
@@ -176,15 +172,15 @@ section[data-testid="stSidebar"] {
 }
 
 .stButton>button[kind="secondary"]:hover {
-    background: rgba(108, 92, 231, 0.05) !important;
+    background: rgba(108, 92, 231, 0.1) !important;
     border-color: #6c5ce7 !important;
     transform: translateY(-3px) !important;
     color: #6c5ce7 !important;
 }
 
 .stat-tile {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(108, 92, 231, 0.05);
+    border: 1px solid var(--card-border);
     border-radius: 12px;
     padding: 15px;
     transition: all 0.3s ease;
@@ -193,7 +189,7 @@ section[data-testid="stSidebar"] {
 }
 
 .stat-tile:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(108, 92, 231, 0.12);
     border-color: #6c5ce7;
     transform: translateY(-5px);
 }
@@ -212,3 +208,8 @@ section[data-testid="stSidebar"] {
     font-weight: bold !important;
     transition: all 0.3s ease;
 }
+
+/* Ensure text visibility in cards across themes */
+.insight-card span, .summary-card p {
+    color: inherit !important;
+}
