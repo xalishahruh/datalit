@@ -16,6 +16,8 @@ Data cleaning and preparation often consume a large portion of a data profession
 - **📊 Visualize Data**: Build stunning, highly optimized interactive charts and dashboards, even with large datasets exceeding 50,000 rows.
 - **📥 Export Results**: Download your clean, ready-to-use datasets along with a full recipe log documenting all applied transformations.
 
+Make sure to read this document till the end 
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -94,4 +96,4 @@ DataLit is developed and actively maintained by a team of open-source enthusiast
 
 Thank you for using DataLit! Let's make data preparation clean, fast, and enjoyable.
 
-This project was implemented as the part of Data Wrabgling and Vizualisation module's coursework by students with the following IDs - 00017978; 00017636
+This project was implemented as the part of Data Wrabgling and Vizualisation module's coursework by students with the following IDs - 00017978; 00017636. All documentation on AI usage and architecture is stored in /md_files and /project_documentation
