@@ -75,15 +75,24 @@ ctrl_col, plot_col = st.columns([1, 2])
 with ctrl_col:
     st.subheader(f"🛠️ {st.session_state.user_role} Controls")
     
+    # Rule-Based Chart Recommendations (Common tip)
+    with st.expander("💡 Chart Recommendations"):
+        st.write("Based on your dataset's schema, we recommend:")
+        if len(num_cols) >= 2:
+            st.markdown(f"- **Scatter Plot**: Good for comparing numeric `{num_cols[0]}` vs `{num_cols[1]}`.")
+        if len(num_cols) >= 1 and len(cat_cols) >= 1:
+            st.markdown(f"- **Box Plot**: Good for comparing `{num_cols[0]}` across categories `{cat_cols[0]}`.")
+        has_datetime = any(pd.api.types.is_datetime64_any_dtype(df[col]) for col in df.columns)
+        if has_datetime:
+            st.markdown("- **Line Chart**: Best for trends over time.")
+    
     chart_type = None
     params = {}
     
     if st.session_state.user_role == "Amateur":
         st.markdown("#### 🔍 Data Quick Check")
-        st.info("Welcome! As an Amateur user, you can quickly preview the data and pick a visual style.")
-        
-        quick_col = st.selectbox("Pick a column to check", num_cols + cat_cols)
-        # Choosing the graph you need
+        st.info("Pick a column and a style to see a quick snapshot.")
+        quick_col = st.selectbox("Pick a column", num_cols + cat_cols)
         chart_type = st.selectbox("Choose Your Chart", ["Histogram", "Box Plot", "Scatter Plot", "Line Chart", "Grouped Bar Chart", "Correlation Heatmap"])
         
         if chart_type == "Histogram":
@@ -92,17 +101,11 @@ with ctrl_col:
             params = {"y": quick_col if quick_col in num_cols else (num_cols[0] if num_cols else quick_col)}
         elif chart_type == "Grouped Bar Chart":
             params = {"x": quick_col, "y": num_cols[0] if num_cols else "", "agg": "count"}
+        # Other types use defaults or simple logic
         elif chart_type == "Scatter Plot":
-            params = {"x": quick_col if quick_col in num_cols else (num_cols[0] if num_cols else quick_col), 
-                      "y": num_cols[1] if len(num_cols) > 1 else (num_cols[0] if num_cols else quick_col)}
+            params = {"x": quick_col if quick_col in num_cols else (num_cols[0] if num_cols else quick_col), "y": num_cols[0]}
         elif chart_type == "Line Chart":
             params = {"x": df.columns[0], "y": quick_col if quick_col in num_cols else (num_cols[0] if num_cols else quick_col)}
-        elif chart_type == "Correlation Heatmap":
-            params = {}
-            
-        st.write("---")
-        st.write("**Data Snapshot:**")
-        st.dataframe(df_filtered.head(10), use_container_width=True)
 
     elif st.session_state.user_role == "Business User":
         st.markdown("#### Quick Templates & Custom Choice")
@@ -110,7 +113,6 @@ with ctrl_col:
         
         if template == "Custom / Choose My Own":
             chart_type = st.selectbox("Choose Your Chart", ["Histogram", "Box Plot", "Scatter Plot", "Line Chart", "Grouped Bar Chart", "Correlation Heatmap", "Area Chart", "Pie Chart"])
-            # Shared column selectors
             col_x = st.selectbox("Dimension / Primary Axis", df.columns)
             col_y = st.selectbox("Metric / Secondary Axis", num_cols)
             params = {"x": col_x, "y": col_y, "column": col_x}
@@ -119,7 +121,7 @@ with ctrl_col:
             date_col = st.selectbox("Date Column", df.columns)
             val_col = st.selectbox("Metric Column", num_cols)
             chart_type = st.radio("Visual Style", ["Line Chart", "Area Chart"], horizontal=True)
-            params = {"x": date_col, "y": val_col, "freq": "Monthly"}
+            params = {"x": date_col, "y": val_col}
             
         elif template == "Distribution Analysis":
             col = st.selectbox("Metric", num_cols)
@@ -144,70 +146,62 @@ with ctrl_col:
             params["x"] = st.selectbox("Category", cat_cols)
             params["y"] = st.selectbox("Metric", num_cols)
             params["agg"] = st.selectbox("Aggregation", ["mean", "sum", "count", "median"])
-            params["top_n"] = st.slider("Top N Categories", 5, 50, 10)
         elif chart_type == "Histogram":
             params["column"] = st.selectbox("Numeric Column", num_cols)
             params["bins"] = st.slider("Bins", 5, 100, 20)
         elif chart_type == "Box Plot":
             params["y"] = st.selectbox("Numeric Variable (Y)", num_cols)
             params["x"] = st.selectbox("Grouping Variable (X) - Optional", ["None"] + df.columns.tolist())
-            params["top_n"] = st.slider("Top N Categories", 5, 50, 10)
         elif chart_type == "Line Chart":
-            params["x"] = st.selectbox("X Axis (Time/Numeric)", df.columns)
-            params["y"] = st.selectbox("Y Axis (Metric)", num_cols)
-            params["freq"] = st.selectbox("Frequency (if Time)", ["None", "Daily", "Weekly", "Monthly", "Yearly"])
-        elif chart_type == "Area Chart":
             params["x"] = st.selectbox("X Axis", df.columns)
             params["y"] = st.selectbox("Y Axis (Metric)", num_cols)
-        elif chart_type == "Pie Chart":
-            params["x"] = st.selectbox("Category", cat_cols)
-            params["y"] = st.selectbox("Metric", num_cols)
-            params["agg"] = st.selectbox("Aggregation", ["sum", "mean", "count"])
         elif chart_type == "Correlation Heatmap":
             params["selected_cols"] = st.multiselect("Columns", num_cols, default=num_cols[:10])
 
     elif st.session_state.user_role == "Engineer":
         st.markdown("#### Transformation & Direct Query")
-        st.info("Directly edit visualization parameters via JSON or apply custom transformations.")
+        st.info("Directly edit visualization parameters via JSON.")
+        if 'viz_config' not in st.session_state: st.session_state.viz_config = {"chart_type": "Histogram", "params": {"column": num_cols[0] if num_cols else ""}}
         config_json = st.text_area("Visualization Config (JSON)", value=json.dumps(st.session_state.viz_config, indent=2), height=200)
         try:
-            params = json.loads(config_json)
-            chart_type = params.get("chart_type", "Histogram")
+            cfg = json.loads(config_json)
+            chart_type = cfg.get("chart_type", "Histogram")
+            params = cfg.get("params", {})
         except:
             st.error("Invalid JSON format")
             chart_type = "Histogram"
             params = {}
 
-    # Common Action Buttons
     st.markdown("---")
     gen_btn = st.button("🚀 Generate Visualization", type="primary", use_container_width=True)
     save_btn = st.button("💾 Save Configuration", use_container_width=True)
-
+    
     if save_btn:
-        st.session_state.viz_config = {"role": st.session_state.user_role, "chart_type": chart_type, "params": params}
+        st.session_state.viz_config = {"chart_type": chart_type, "params": params}
         st.success("Configuration saved to session!")
-
 fig = None
 with plot_col:
     st.subheader("📈 Real-time Preview")
     
     if gen_btn or 'fig' in st.session_state:
-        # Simplified plotting logic for brevity in this replace call
-        # In actual implementation, we would call the visualization_engine based on chart_type and params
         with st.spinner("Rendering..."):
-            if chart_type == "Histogram" or (not chart_type and num_cols):
-                col = params.get("column", num_cols[0])
-                fig = plot_histogram(df_filtered, col, params.get("bins", 20))
-            elif chart_type == "Line Chart":
-                fig = plot_line(df_filtered, params["x"], params["y"])
-            elif chart_type == "Grouped Bar Chart":
-                fig = plot_grouped_bar(df_filtered, params["x"], params["y"], params.get("agg", "mean"))
+            # Unified plotting logic
+            if chart_type == "Histogram":
+                fig = plot_histogram(df_filtered, params.get("column", num_cols[0]), params.get("bins", 20))
+            elif chart_type == "Box Plot":
+                fig = plot_box(df_filtered, params.get("y", num_cols[0]), group=params.get("x") if params.get("x") != "None" else None)
             elif chart_type == "Scatter Plot":
                 fig = plot_scatter(df_filtered, params["x"], params["y"], params.get("color") if params.get("color") != "None" else None)
+            elif chart_type == "Line Chart":
+                fig = plot_line(df_filtered, params["x"], params["y"])
             elif chart_type == "Area Chart":
                 fig = plot_area(df_filtered, params["x"], params["y"])
             elif chart_type == "Pie Chart":
                 fig = plot_pie(df_filtered, params["x"], params["y"], params.get("agg", "sum"))
+            elif chart_type == "Grouped Bar Chart":
+                fig = plot_grouped_bar(df_filtered, params["x"], params["y"], params.get("agg", "mean"))
+            elif chart_type == "Correlation Heatmap":
+                fig = plot_correlation_heatmap(df_filtered)
             
             if fig:
                 st.pyplot(fig)
@@ -217,14 +211,13 @@ with plot_col:
                 st.markdown("---")
                 if len(st.session_state.dashboard_charts) < 6:
                     if st.button(f"➕ Add to Dashboard ({len(st.session_state.dashboard_charts)}/6)", use_container_width=True):
-                        # Capture chart state
                         chart_data = {"chart_type": chart_type, "params": params, "df_filtered": df_filtered.copy()}
                         st.session_state.dashboard_charts.append(chart_data)
                         st.toast("Chart added to your Dashboard Plate!", icon="✅")
                 else:
-                    st.warning("Dashboard Plate is full (6/6). Clear or view below.")
+                    st.warning("Dashboard Plate is full (6/6).")
             else:
-                st.info("Select parameters and click generate.")
+                st.info("Select parameters and click 'Generate Visualization'.")
 
     # Export Section
     if 'fig' in st.session_state:
@@ -339,4 +332,4 @@ with st.expander("💡 Business Insights & Monitoring Tip"):
     - **Operational Monitoring**: Analysts can use 'Scatter Plots' to detect anomalies in process metrics.
     - **Custom Logic**: Engineers can use the JSON config to build proprietary visualization pipelines.
     """)
-
+

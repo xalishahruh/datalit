@@ -848,6 +848,10 @@ def show_datatype_tab(df):
 
     elif target_type == "Datetime":
         parse_mode = st.radio("Parsing Mode:", ["Auto-detect", "Manual Format"], key="dt_parse_mode")
+        
+        if parse_mode == "Auto-detect":
+            st.caption("ℹ️ Note: Auto-detect works best with these formats: YYYY-MM-DD, MM/DD/YYYY, DD-MM-YYYY, etc. If your data is not in these formats, it is better to use Manual Format.")
+            
         fmt = None
         if parse_mode == "Manual Format":
             fmt = st.text_input("Enter format (e.g., %Y-%m-%d):", key="dt_fmt")
