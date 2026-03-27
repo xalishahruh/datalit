@@ -3,6 +3,30 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 
+def get_time_frequencies(series):
+    """
+    Determine relevant datetime resampling frequencies based on data resolution and span.
+    """
+    freq_map = {"Raw (No Grouping)": None}
+    time_series = pd.to_datetime(series, errors='coerce').dropna()
+    unique_dates = time_series.drop_duplicates().sort_values()
+    
+    if len(unique_dates) > 1:
+        diffs = unique_dates.diff().dropna()
+        median_diff = diffs.median()
+        total_duration = unique_dates.max() - unique_dates.min()
+        
+        if median_diff <= pd.Timedelta(days=2) and total_duration >= pd.Timedelta(days=1):
+            freq_map["Daily"] = "D"
+        if median_diff <= pd.Timedelta(days=14) and total_duration >= pd.Timedelta(days=7):
+            freq_map["Weekly"] = "W"
+        if median_diff <= pd.Timedelta(days=45) and total_duration >= pd.Timedelta(days=28):
+            freq_map["Monthly"] = "M"
+        if total_duration >= pd.Timedelta(days=364):
+            freq_map["Yearly"] = "Y"
+            
+    return freq_map
+
 def apply_smart_rotation(ax, labels, rotation=45, threshold=10):
     """
     Apply rotation if labels are too long or too many.

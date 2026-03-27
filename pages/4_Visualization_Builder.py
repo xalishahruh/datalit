@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 from core.visualization_engine import (
     plot_histogram, plot_box, plot_scatter, 
-    plot_line, plot_grouped_bar, plot_correlation_heatmap
+    plot_line, plot_grouped_bar, plot_correlation_heatmap,
+    get_time_frequencies
 )
 from services.dataset_manager import get_dataset, dataset_exists, init_manager
 from utils.ui_utils import apply_custom_styles
@@ -148,13 +149,9 @@ with ctrl_col:
         
         if is_datetime:
             st.info("✅ Datetime detected. You can group values to simplify the trend.")
-            freq_map = {
-                "Raw (No Grouping)": None,
-                "Daily": "D",
-                "Weekly": "W",
-                "Monthly": "M",
-                "Yearly": "Y"
-            }
+            
+            freq_map = get_time_frequencies(df_filtered[x_col])
+                    
             freq_label = st.selectbox("Time Frequency", list(freq_map.keys()))
             resample_freq = freq_map[freq_label]
         else:
