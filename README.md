@@ -24,6 +24,8 @@ Ensure you have Python 3.9 or higher installed on your system.
 
 ### Installation
 
+- Local
+
 1. Clone the repository to your local machine:
    ```bash
    git clone https://github.com/yourusername/datalit.git
@@ -44,6 +46,9 @@ Ensure you have Python 3.9 or higher installed on your system.
    pip install -r requirements.txt
    ```
 
+- Deployed
+1. Follow the link https://datalit.streamlit.app/
+   
 ### Usage
 
 Start the Streamlit application by running the following command from the root directory:
@@ -69,6 +74,7 @@ However, if you'd like to use your own secure API key for personalized usage or 
 2. Ensure you have a Groq account, or go to [console.groq.com/keys](https://console.groq.com/keys) to create one.
 3. Generate a new API key.
 4. Input your custom key directly into the "Groq API Key" field in the AI Assistant configurations panel.
+5. You can use the default one by toggling it - everything is safe (API is created on Zero-Trust Basis)
 
 > **Note:** The AI Assistant allows you to switch between Groq and OpenAI based on your preferences and availability of API keys.
 
@@ -87,3 +93,5 @@ DataLit is developed and actively maintained by a team of open-source enthusiast
 - To reach the core maintainers, feel free to open a discussion or tag us in your pull requests.
 
 Thank you for using DataLit! Let's make data preparation clean, fast, and enjoyable.
+
+This project was implemented as the part of Data Wrabgling and Vizualisation module's coursework by students with the following IDs - 00017978; 00017636
