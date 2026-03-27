@@ -1,9 +1,17 @@
+openai
 streamlit
 pandas
 numpy
 matplotlib
 seaborn
+plotly
+scikit-learn
 openpyxl
-fpdf2
-openai
+gspread
+google-auth
 python-dotenv
+=======
+gspread
+google-auth
+fpdf2
+>>>>>>> 75f4818b2163107339b0c181b5a1b676df6468d0
