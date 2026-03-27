@@ -7,6 +7,8 @@ import streamlit as st
 from fpdf import FPDF
 import matplotlib.pyplot as plt
 
+from core import pipeline
+
 def generate_python_script(recipe_log):
     """
     Converts the transformation recipe log into a standalone Python script.
@@ -18,51 +20,25 @@ def generate_python_script(recipe_log):
         "",
         "def apply_recipe(df):",
         "    \"\"\"Applies the saved transformation recipe to a dataframe.\"\"\"",
-        "    new_df = df.copy()"
+        "    df = df.copy()",
+        "    # Step-by-step reproduction of the DataLit session"
     ]
     
-    for step in recipe_log:
-        op = step['operation']
-        params = step['parameters']
-        
-        script.append(f"    # Step: {op}")
-        
-        if "Remove Missing Rows" in op:
-            if params.get('option') == "Remove from all columns":
-                script.append("    new_df = transformations.drop_missing_rows(new_df)")
-            else:
-                script.append(f"    new_df = transformations.drop_missing_rows(new_df, {params.get('columns')})")
-        
-        elif "Fill Missing" in op:
-            method = params.get('method', '').lower()
-            col = params.get('column')
-            if method in ['mean', 'median']:
-                script.append(f"    new_df = transformations.fill_numeric(new_df, '{col}', '{method}')")
-            elif 'mode' in method:
-                script.append(f"    new_df = transformations.fill_mode(new_df, '{col}')")
-            elif method == 'constant':
-                script.append(f"    new_df = transformations.fill_constant(new_df, '{col}', '{params.get('value')}')")
-        
-        elif "Remove Duplicates" in op:
-            subset = params.get('subset')
-            keep = params.get('type', 'First').lower()
-            script.append(f"    new_df = transformations.remove_duplicates(new_df, subset={None if subset == 'full' else subset}, keep='{keep}')")
+    if not recipe_log:
+        script.append("    pass")
+    else:
+        for step in recipe_log:
+            op = step.get('operation', 'Unknown')
+            script.append(f"    # Operation: {op}")
+            step_code = pipeline.get_step_python_code(step)
+            script.append(step_code)
             
-        elif "Drop Column" in op:
-            script.append(f"    new_df = column_ops.drop_column(new_df, '{params.get('column')}')")
-            
-        elif "Rename Column" in op:
-            script.append(f"    new_df = column_ops.rename_column(new_df, '{params.get('old')}', '{params.get('new')}')")
-            
-        # Add more mappings as needed for other operations...
-        else:
-            script.append(f"    # TODO: Implement mapping for {op}")
-            
-    script.append("    return new_df")
+    script.append("    return df")
     script.append("")
-    script.append("# Example Usage:")
+    script.append("# --- Example Usage ---")
     script.append("# df = pd.read_csv('your_data.csv')")
     script.append("# clean_df = apply_recipe(df)")
+    script.append("# print(clean_df.head())")
     
     return "\n".join(script)
 
@@ -99,19 +75,19 @@ def generate_pdf_report(df_summary_html, chart_bytes_list=None):
     pdf.add_page()
     
     # Header
-    pdf.set_font("Arial", 'B', 20)
+    pdf.set_font("Helvetica", 'B', 20)
     pdf.set_text_color(108, 92, 231) # DataLit Primary Color
     pdf.cell(0, 15, "DataLit Analysis Report", 0, 1, 'C')
-    pdf.set_font("Arial", '', 10)
+    pdf.set_font("Helvetica", '', 10)
     pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 10, f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", 0, 1, 'C')
     pdf.ln(10)
     
     # Dataset Overview
-    pdf.set_font("Arial", 'B', 14)
+    pdf.set_font("Helvetica", 'B', 14)
     pdf.set_text_color(45, 52, 54)
     pdf.cell(0, 10, "1. Dataset Overview", 0, 1, 'L')
-    pdf.set_font("Arial", '', 11)
+    pdf.set_font("Helvetica", '', 11)
     
     # Simple summary stats instead of full HTML to PDF (fpdf2 is limited with HTML)
     pdf.multi_cell(0, 10, df_summary_html)

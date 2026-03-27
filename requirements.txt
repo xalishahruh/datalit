@@ -1,11 +1,9 @@
-openai
 streamlit
 pandas
 numpy
 matplotlib
 seaborn
-plotly
-scikit-learn
 openpyxl
-gspread
-google-auth
+fpdf2
+openai
+python-dotenv
