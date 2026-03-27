@@ -7,13 +7,13 @@ from services.dataset_manager import get_dataset, dataset_exists, init_manager
 from services import export_service
 from utils.ui_utils import apply_custom_styles
 
-st.set_page_config(page_title="Export Results", layout="wide")
+st.set_page_config(page_title="Export Hub", layout="wide")
 apply_custom_styles()
 
 # Initialize session state
 init_manager()
 
-st.title("💾 Export Results & Transformation Log")
+st.title("💼 DataLit Export Hub")
 st.markdown("---")
 
 if not dataset_exists():
@@ -23,108 +23,90 @@ if not dataset_exists():
 df = get_dataset()
 recipe_log = st.session_state.get("recipe_log", [])
 
-# --- Section 1: Transformation Log UI ---
-st.subheader("📜 Transformation History")
+# --- Section 1: Detailed Audit Trail ---
+with st.expander("📜 Transformation History & Audit Trail", expanded=False):
+    if not recipe_log:
+        st.info("No transformations applied yet. Your dataset is in its original state.")
+    else:
+        summary_data = []
+        for step_num, log in enumerate(recipe_log, 1):
+            param_summary = ", ".join([f"{k}={v}" for k, v in log.get('parameters', {}).items()])
+            cols_summary = ", ".join(log.get('affected_columns', []))
+            summary_data.append({
+                "Step": step_num,
+                "Operation": log.get('operation', 'Unknown'),
+                "Affected Columns": cols_summary,
+                "Parameters": param_summary,
+                "Time": log.get('timestamp', '')
+            })
+        st.dataframe(pd.DataFrame(summary_data), use_container_width=True, hide_index=True)
 
-if not recipe_log:
-    st.info("No transformations applied yet. Your dataset is in its original state.")
-else:
-    # Build a summary DataFrame for the top-level View
-    summary_data = []
-    for step_num, log in enumerate(recipe_log, 1):
-        # Flatten parameters for summary view
-        param_summary = ", ".join([f"{k}={v}" for k, v in log.get('parameters', {}).items()])
-        cols_summary = ", ".join(log.get('affected_columns', []))
-        
-        summary_data.append({
-            "Step": step_num,
-            "Operation": log.get('operation', 'Unknown'),
-            "Affected Columns": cols_summary,
-            "Parameters": param_summary,
-            "Time": log.get('timestamp', ''),
-            "Duration": log.get('duration', 'N/A')
-        })
-    
-    summary_df = pd.DataFrame(summary_data)
-    st.dataframe(summary_df, use_container_width=True, hide_index=True)
+# --- Section 2: Data & Report Export ---
+st.subheader("📥 Multi-Format Export Center")
+st.write("Generate and download your cleaned data and reports in various formats.")
 
-    # Build the Detailed Audit Trail
-    st.markdown("#### Detailed Recipe Audit")
-    for step_num, log in enumerate(recipe_log, 1):
-        with st.expander(f"Step {step_num}: {log.get('operation')} at {log.get('timestamp')}"):
-            cols = st.columns(2)
-            with cols[0]:
-                st.markdown("**Affected Columns:**")
-                st.write(log.get("affected_columns"))
-            with cols[1]:
-                st.markdown("**Parameters (JSON):**")
-                st.json(log.get("parameters", {}))
+col1, col2, col3, col4 = st.columns(4)
 
-
-# --- Section 2: Data Export Panel ---
-st.markdown("---")
-st.subheader("📥 Export Downloads")
-
-col1, col2, col3 = st.columns(3)
-
-# 1. CSV Download
 with col1:
-    st.markdown("#### The Cleaned Data")
-    st.write("Download your perfectly prepped dataset as a standard CSV.")
-    csv_bytes = df.to_csv(index=False).encode('utf-8')
+    st.info("📊 **Standard CSV**")
+    csv_bytes = export_service.export_as_csv(df)
     st.download_button(
-        label="Download CSV",
-        data=csv_bytes,
-        file_name=f"datalit_cleaned_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        mime="text/csv",
-        use_container_width=True
+        "Download CSV", csv_bytes, 
+        f"clean_data_{datetime.datetime.now().strftime('%Y%m%d')}.csv", 
+        "text/csv", use_container_width=True
     )
 
-# 2. Excel Download
 with col2:
-    st.markdown("#### Excel Format")
-    st.write("Download your dataset structured for Excel (.xlsx).")
-    
-    # Write to a buffer using openpyxl
-    buffer = io.BytesIO()
-    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Cleaned Data')
-    excel_bytes = buffer.getvalue()
-    
+    st.info("🔗 **JSON Data**")
+    json_bytes = export_service.export_as_json(df)
     st.download_button(
-        label="Download Excel",
-        data=excel_bytes,
-        file_name=f"datalit_cleaned_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Download JSON", json_bytes, 
+        f"data_export_{datetime.datetime.now().strftime('%Y%m%d')}.json", 
+        "application/json", use_container_width=True
+    )
+
+with col3:
+    st.info("📑 **Excel Worksheet**")
+    excel_bytes = export_service.export_as_excel(df)
+    st.download_button(
+        "Download Excel", excel_bytes,
+        f"clean_data_{datetime.datetime.now().strftime('%Y%m%d')}.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
 
-# 3. JSON Recipe Download
-with col3:
-    st.markdown("#### Transformation Recipe")
-    st.write("Download the exact JSON log of operations for automated reproducibility.")
-    recipe_json = json.dumps(recipe_log, indent=4)
-    st.download_button(
-        label="Download JSON Recipe",
-        data=recipe_json,
-        file_name=f"datalit_recipe_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-        mime="application/json",
-        use_container_width=True
-    )
+with col4:
+    st.info("📋 **PDF Summary**")
+    if st.button("Generate PDF", use_container_width=True):
+        summary_text = f"Dataset size: {df.shape}\nColumns: {', '.join(df.columns)}\nRows: {len(df)}"
+        pdf_bytes = export_service.generate_pdf_report(summary_text)
+        st.download_button("Download PDF", pdf_bytes, "summary_report.pdf", "application/pdf", use_container_width=True)
 
 # --- Section 3: Production Pipeline ---
 st.markdown("---")
-st.subheader("⚙️ Production Pipeline")
-st.write("Export a standalone Python script that reproduces all these steps on new data.")
+col_p1, col_p2 = st.columns([2, 1])
+with col_p1:
+    st.subheader("🐍 Production Pipeline")
+    st.write("Export a standalone Python script that reproduces all these steps on new data.")
+with col_p2:
+    python_code = export_service.generate_python_script(recipe_log)
+    st.download_button(
+        "Download .py Script", python_code, 
+        "transformation_pipeline.py", 
+        "text/x-python", use_container_width=True, type="primary"
+    )
 
-if st.button("Generate Python Pipeline", type="primary", use_container_width=True):
-    with st.spinner("Generating pipeline script..."):
-        python_code = export_service.generate_python_script(recipe_log)
-        st.code(python_code, language="python")
-        st.download_button(
-            label="Download Pipeline Script (.py)",
-            data=python_code,
-            file_name=f"datalit_pipeline_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.py",
-            mime="text/x-python",
-            use_container_width=True
-        )
+# --- Section 3: Visual Audit (Phase 4 Continuation) ---
+st.markdown("---")
+st.subheader("🖼️ Visualization Archive")
+if 'fig' in st.session_state:
+    st.write("Download the latest visualization generated in the Builder.")
+    st.pyplot(st.session_state.fig)
+    img_bytes = export_service.export_as_image(st.session_state.fig)
+    st.download_button("Download High-Res PNG", img_bytes, "viz_export.png", "image/png", use_container_width=True)
+else:
+    st.info("No visualizations currently in session. Go to the **Visualization Builder** to create one.")
+
+# Business Alignment Footer
+st.markdown("---")
+st.caption("DataLit Export Module v2.0 | Optimized for Business Intelligence & Reproducibility")

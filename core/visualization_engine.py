@@ -127,3 +127,25 @@ def plot_correlation_heatmap(df):
     sns.heatmap(corr, annot=True, cmap="coolwarm", ax=ax)
     ax.set_title("Correlation Matrix")
     return fig
+
+def plot_area(df, x, y, rotation=45):
+    """Used for cumulative time-based trends."""
+    fig, ax = plt.subplots()
+    df_sorted = df.sort_values(x)
+    ax.fill_between(df_sorted[x], df_sorted[y], alpha=0.5)
+    ax.plot(df_sorted[x], df_sorted[y])
+    ax.set_title(f"Area Chart: {y} over {x}")
+    ax.set_xlabel(x, labelpad=15)
+    ax.set_ylabel(y, labelpad=15)
+    apply_smart_rotation(ax, df_sorted[x].tolist(), rotation=rotation)
+    plt.tight_layout()
+    return fig
+
+def plot_pie(df, x, y, agg="sum"):
+    """Used for part-to-whole categorical breakdown."""
+    grouped = df.groupby(x)[y].agg(agg).reset_index()
+    fig, ax = plt.subplots()
+    ax.pie(grouped[y], labels=grouped[x], autopct='%1.1f%%', startangle=140)
+    ax.set_title(f"{agg.capitalize()} of {y} by {x}")
+    plt.tight_layout()
+    return fig
