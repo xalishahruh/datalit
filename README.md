@@ -96,4 +96,4 @@ DataLit is developed and actively maintained by a team of open-source enthusiast
 
 Thank you for using DataLit! Let's make data preparation clean, fast, and enjoyable.
 
-This project was implemented as the part of Data Wrabgling and Vizualisation module's coursework by students with the following IDs - 00017978; 00017636. All documentation on AI usage and architecture is stored in /md_files and /project_documentation
+This project was implemented as the part of Data Wrabgling and Vizualisation module's coursework by students with the following IDs - 00017978; 00017636. All documentation on AI usage and architecture is stored in /md_files and /project_documentation. 4 datasets are not provided separately, but inbuilt into the panel
