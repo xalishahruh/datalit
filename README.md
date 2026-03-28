@@ -15,6 +15,7 @@ Data cleaning and preparation often consume a large portion of a data profession
 - **🤖 AI Assistant**: Let our rule-based engine and optional LLM insights guide you through the cleaning process with actionable recommendations.
 - **📊 Visualize Data**: Build stunning, highly optimized interactive charts and dashboards, even with large datasets exceeding 50,000 rows.
 - **📥 Export Results**: Download your clean, ready-to-use datasets along with a full recipe log documenting all applied transformations.
+- Make sure to prroperly select features according to your dataset - some features are non-compatible with particular datasets
 
 Make sure to read this document till the end 
 
