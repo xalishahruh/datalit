@@ -12,6 +12,42 @@ from services.dataset_manager import get_dataset, dataset_exists, init_manager
 from services import export_service
 from utils.ui_utils import apply_custom_styles
 
+def render_chart(chart_type, params, df):
+    """
+    Unified rendering logic for all chart types.
+    Handles 'None' string mapping and safe parameter lookup.
+    """
+    if df is None or df.empty:
+        return None
+        
+    def clean(val):
+        return None if val == "None" or val is None else val
+
+    try:
+        if chart_type == "Histogram":
+            return plot_histogram(df, column=params.get("column"), bins=params.get("bins", 20))
+        elif chart_type == "Box Plot":
+            return plot_box(df, column=params.get("y"), group=clean(params.get("x")))
+        elif chart_type == "Scatter Plot":
+            return plot_scatter(df, x=params.get("x"), y=params.get("y"), color=clean(params.get("color")))
+        elif chart_type == "Line Chart":
+            return plot_line(df, x=params.get("x"), y=params.get("y"))
+        elif chart_type == "Area Chart":
+            return plot_area(df, x=params.get("x"), y=params.get("y"))
+        elif chart_type == "Pie Chart":
+            return plot_pie(df, x=params.get("x"), y=params.get("y"), agg=params.get("agg", "sum"), top_n=params.get("top_n"))
+        elif chart_type == "Grouped Bar Chart":
+            return plot_grouped_bar(df, x=params.get("x"), y=params.get("y"), agg=params.get("agg", "mean"), top_n=params.get("top_n"))
+        elif chart_type == "Correlation Heatmap":
+            # For heatmap, ensure we have selected_cols or fallback to all numeric
+            cols = params.get("selected_cols")
+            return plot_correlation_heatmap(df, columns=cols if cols else None)
+    except Exception as e:
+        st.error(f"Error rendering {chart_type}: {e}")
+        return None
+    return None
+
+
 # Page Config
 st.set_page_config(page_title="Visualization Builder Pro", layout="wide")
 apply_custom_styles()
@@ -138,11 +174,17 @@ with ctrl_col:
         st.markdown("#### Advanced Configuration")
         chart_type = st.selectbox("Chart Type", ["Histogram", "Box Plot", "Scatter Plot", "Line Chart", "Area Chart", "Pie Chart", "Grouped Bar Chart", "Correlation Heatmap"])
         
+        if not num_cols:
+            st.error("No numeric columns found in this dataset.")
+            st.stop()
         if chart_type == "Scatter Plot":
             params["x"] = st.selectbox("X Axis", num_cols)
             params["y"] = st.selectbox("Y Axis", [c for c in num_cols if c != params["x"]])
             params["color"] = st.selectbox("Color (Optional)", ["None"] + cat_cols)
         elif chart_type == "Grouped Bar Chart":
+            if not cat_cols:
+                st.error("No categorical columns found.")
+                st.stop()
             params["x"] = st.selectbox("Category", cat_cols)
             params["y"] = st.selectbox("Metric", num_cols)
             params["agg"] = st.selectbox("Aggregation", ["mean", "sum", "count", "median"])
@@ -160,7 +202,10 @@ with ctrl_col:
             params["x"] = st.selectbox("X Axis (Dimension/Time)", df.columns)
             params["y"] = st.selectbox("Y Axis (Metric)", num_cols)
         elif chart_type == "Pie Chart":
-            params["x"] = st.selectbox("Category (X)", cat_cols if cat_cols else df.columns)
+            if not cat_cols and not df.columns.tolist():
+                st.error("No columns found.")
+                st.stop()
+            params["x"] = st.selectbox("Category (X)", cat_cols if cat_cols else df.columns.tolist())
             params["y"] = st.selectbox("Metric (Y)", num_cols)
             params["agg"] = st.selectbox("Aggregation", ["sum", "mean", "count", "median"])
             params["top_n"] = st.slider("Show Top N", 1, 100, 10)
@@ -195,22 +240,8 @@ with plot_col:
     if gen_btn or 'fig' in st.session_state:
         with st.spinner("Rendering..."):
             # Unified plotting logic
-            if chart_type == "Histogram":
-                fig = plot_histogram(df_filtered, params.get("column", num_cols[0]), params.get("bins", 20))
-            elif chart_type == "Box Plot":
-                fig = plot_box(df_filtered, params.get("y", num_cols[0]), group=params.get("x") if params.get("x") != "None" else None)
-            elif chart_type == "Scatter Plot":
-                fig = plot_scatter(df_filtered, params["x"], params["y"], params.get("color") if params.get("color") != "None" else None)
-            elif chart_type == "Line Chart":
-                fig = plot_line(df_filtered, params["x"], params["y"])
-            elif chart_type == "Area Chart":
-                fig = plot_area(df_filtered, params["x"], params["y"])
-            elif chart_type == "Pie Chart":
-                fig = plot_pie(df_filtered, params["x"], params["y"], params.get("agg", "sum"), top_n=params.get("top_n"))
-            elif chart_type == "Grouped Bar Chart":
-                fig = plot_grouped_bar(df_filtered, params["x"], params["y"], params.get("agg", "mean"), top_n=params.get("top_n"))
-            elif chart_type == "Correlation Heatmap":
-                fig = plot_correlation_heatmap(df_filtered, params.get("selected_cols"))
+            fig = render_chart(chart_type, params, df_filtered)
+
             
             if fig:
                 st.pyplot(fig)
@@ -272,22 +303,7 @@ if st.session_state.dashboard_charts:
             saved_df = chart['df_filtered']
             
             with st.spinner(f"Loading chart {idx+1}..."):
-                if saved_type == "Histogram":
-                    f = plot_histogram(saved_df, saved_params["column"], saved_params.get("bins", 20))
-                elif saved_type == "Box Plot":
-                    f = plot_box(saved_df, saved_params["y"], saved_params.get("x"))
-                elif saved_type == "Scatter Plot":
-                    f = plot_scatter(saved_df, saved_params["x"], saved_params["y"], saved_params.get("color"))
-                elif saved_type == "Line Chart":
-                    f = plot_line(saved_df, saved_params["x"], saved_params["y"])
-                elif saved_type == "Area Chart":
-                    f = plot_area(saved_df, saved_params["x"], saved_params["y"])
-                elif saved_type == "Pie Chart":
-                    f = plot_pie(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "sum"), top_n=saved_params.get("top_n"))
-                elif saved_type == "Grouped Bar Chart":
-                    f = plot_grouped_bar(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "mean"), top_n=saved_params.get("top_n"))
-                elif saved_type == "Correlation Heatmap":
-                    f = plot_correlation_heatmap(saved_df, saved_params.get("selected_cols"))
+                f = render_chart(saved_type, saved_params, saved_df)
                 
                 if f:
                     st.pyplot(f)
@@ -311,21 +327,21 @@ if st.session_state.dashboard_charts:
                 saved_df = chart['df_filtered']
                 f = None
                 if saved_type == "Histogram":
-                    f = plot_histogram(saved_df, saved_params["column"], saved_params.get("bins", 20))
+                    f = plot_histogram(saved_df, column=saved_params.get("column"), bins=saved_params.get("bins", 20))
                 elif saved_type == "Box Plot":
-                    f = plot_box(saved_df, saved_params["y"], saved_params.get("x"))
+                    f = plot_box(saved_df, column=saved_params.get("y"), group=saved_params.get("x"))
                 elif saved_type == "Scatter Plot":
-                    f = plot_scatter(saved_df, saved_params["x"], saved_params["y"], saved_params.get("color"))
+                    f = plot_scatter(saved_df, x=saved_params.get("x"), y=saved_params.get("y"), color=saved_params.get("color"))
                 elif saved_type == "Line Chart":
-                    f = plot_line(saved_df, saved_params["x"], saved_params["y"])
+                    f = plot_line(saved_df, x=saved_params.get("x"), y=saved_params.get("y"))
                 elif saved_type == "Area Chart":
-                    f = plot_area(saved_df, saved_params["x"], saved_params["y"])
+                    f = plot_area(saved_df, x=saved_params.get("x"), y=saved_params.get("y"))
                 elif saved_type == "Pie Chart":
-                    f = plot_pie(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "sum"), top_n=saved_params.get("top_n"))
+                    f = plot_pie(saved_df, x=saved_params.get("x"), y=saved_params.get("y"), agg=saved_params.get("agg", "sum"), top_n=saved_params.get("top_n"))
                 elif saved_type == "Grouped Bar Chart":
-                    f = plot_grouped_bar(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "mean"), top_n=saved_params.get("top_n"))
+                    f = plot_grouped_bar(saved_df, x=saved_params.get("x"), y=saved_params.get("y"), agg=saved_params.get("agg", "mean"), top_n=saved_params.get("top_n"))
                 elif saved_type == "Correlation Heatmap":
-                    f = plot_correlation_heatmap(saved_df, saved_params.get("selected_cols"))
+                    f = plot_correlation_heatmap(saved_df, columns=saved_params.get("selected_cols"))
                 
                 if f:
                     all_charts_bytes.append(export_service.export_as_image(f))

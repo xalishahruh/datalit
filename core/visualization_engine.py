@@ -3,6 +3,10 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 
+# Set non-interactive backend for server environments
+import matplotlib
+matplotlib.use('Agg')
+
 def get_time_frequencies(series):
     """
     Determine relevant datetime resampling frequencies based on data resolution and span.
@@ -52,22 +56,25 @@ def apply_smart_rotation(ax, labels, rotation=45, threshold=10):
 
 def plot_histogram(df, column, bins=20):
     """Used for analyzing numeric distributions."""
+    if df is None or df.empty or column not in df.columns:
+        return None
     fig, ax = plt.subplots()
     ax.hist(df[column].dropna(), bins=bins)
     ax.set_title(f"Distribution of {column}")
     ax.set_xlabel(column, labelpad=15)
     ax.set_ylabel("Frequency", labelpad=15)
+    plt.tight_layout()
     return fig
 
 def plot_box(df, column, group=None, rotation=0):
     """
     Used for outlier detection and spread analysis.
-    Assumption: Grouping by a categorical variable allows for side-by-side comparison of 
-    numeric distributions across different segments (e.g., Sales by Region).
-    If no group is provided, it visualizes the overall distribution of the column.
     """
+    if df is None or df.empty or column not in df.columns:
+        return None
+        
     fig, ax = plt.subplots()
-    if group:
+    if group and group in df.columns:
         plot_df = df.copy()
         # Check if the group column is datetime-like
         if pd.api.types.is_datetime64_any_dtype(plot_df[group]):
@@ -75,7 +82,6 @@ def plot_box(df, column, group=None, rotation=0):
             
         sns.boxplot(data=plot_df, x=group, y=column, ax=ax)
         
-        # Force a draw if needed to populate labels, though usually not req for sns
         labels = plot_df[group].unique()
         apply_smart_rotation(ax, labels, rotation=rotation)
     else:
@@ -88,19 +94,21 @@ def plot_box(df, column, group=None, rotation=0):
 def plot_scatter(df, x, y, color=None):
     """
     Used for numeric relationships between two variables.
-    
-    Assumption: Color encoding (hue) is used to identify categorical patterns or clusters 
-    within the scatter plot (e.g., Age vs Salary, colored by Department).
-    This helps in understanding if relationships differ across categories.
     """
+    if df is None or df.empty or x not in df.columns or y not in df.columns:
+        return None
+        
     fig, ax = plt.subplots()
-    sns.scatterplot(data=df, x=x, y=y, hue=color, ax=ax)
+    # Handle color/hue safely
+    hue_param = color if color in df.columns else None
+    
+    sns.scatterplot(data=df, x=x, y=y, hue=hue_param, ax=ax)
     ax.set_title(f"{y} vs {x}")
     ax.set_xlabel(x, labelpad=15)
     ax.set_ylabel(y, labelpad=15)
     
     # Move legend outside the plot area to prevent overlapping with data points
-    if color:
+    if hue_param:
         ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
     
     plt.tight_layout()
@@ -108,6 +116,9 @@ def plot_scatter(df, x, y, color=None):
 
 def plot_line(df, x, y, rotation=45, date_format=None):
     """Used for time-based trends."""
+    if df is None or df.empty or x not in df.columns or y not in df.columns:
+        return None
+        
     fig, ax = plt.subplots()
     df_sorted = df.sort_values(x)
     
@@ -129,15 +140,31 @@ def plot_line(df, x, y, rotation=45, date_format=None):
 
 def plot_grouped_bar(df, x, y, agg="mean", rotation=45, top_n=None):
     """Used for categorical comparisons."""
-    grouped = df.groupby(x)[y].agg(agg).reset_index()
+    if df is None or df.empty or x not in df.columns or y not in df.columns:
+        return None
     
+    # Ensure agg is a string if possible, default to mean if None
+    agg = agg if agg else "mean"
+    
+    try:
+        grouped = df.groupby(x)[y].agg(agg).reset_index()
+    except Exception:
+        # Fallback to count if agg fails (e.g., mean on strings) or just return None
+        return None
+    
+    if grouped.empty:
+        return None
+
     # Apply Top N filtering if requested
-    if top_n and isinstance(top_n, int) and top_n > 0:
+    if top_n and isinstance(top_n, (int, float)) and top_n > 0:
+        top_n = int(top_n)
         grouped = grouped.sort_values(by=y, ascending=False).head(top_n)
         
     fig, ax = plt.subplots()
     sns.barplot(data=grouped, x=x, y=y, ax=ax)
-    ax.set_title(f"{agg} of {y} by {x}" + (f" (Top {top_n})" if top_n else ""))
+    
+    title_suffix = f" (Top {top_n})" if top_n and top_n < len(df.groupby(x)) else ""
+    ax.set_title(f"{str(agg).capitalize()} of {y} by {x}" + title_suffix)
     ax.set_xlabel(x, labelpad=15)
     ax.set_ylabel(y, labelpad=15)
     
@@ -149,21 +176,29 @@ def plot_grouped_bar(df, x, y, agg="mean", rotation=45, top_n=None):
 
 def plot_correlation_heatmap(df, columns=None):
     """Used for numeric relationships across many columns."""
-    if columns:
+    if df is None or df.empty:
+        return None
+        
+    if columns and isinstance(columns, list):
         valid_cols = [c for c in columns if c in df.columns and pd.api.types.is_numeric_dtype(df[c])]
         if valid_cols:
             df = df[valid_cols]
             
     corr = df.select_dtypes(include="number").corr()
-    if corr.empty:
+    if corr.empty or corr.isnull().all().all():
         return None
-    fig, ax = plt.subplots(figsize=(8,6))
-    sns.heatmap(corr, annot=True, cmap="coolwarm", ax=ax)
+        
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f", ax=ax)
     ax.set_title("Correlation Matrix")
+    plt.tight_layout()
     return fig
 
 def plot_area(df, x, y, rotation=45):
     """Used for cumulative time-based trends."""
+    if df is None or df.empty or x not in df.columns or y not in df.columns:
+        return None
+        
     fig, ax = plt.subplots()
     df_sorted = df.sort_values(x)
     ax.fill_between(df_sorted[x], df_sorted[y], alpha=0.5)
@@ -177,14 +212,32 @@ def plot_area(df, x, y, rotation=45):
 
 def plot_pie(df, x, y, agg="sum", top_n=None):
     """Used for part-to-whole categorical breakdown."""
-    grouped = df.groupby(x)[y].agg(agg).reset_index()
+    if df is None or df.empty or x not in df.columns or y not in df.columns:
+        return None
+
+    # Ensure agg is a string if possible, default to sum if None
+    agg = agg if agg else "sum"
+
+    try:
+        grouped = df.groupby(x)[y].agg(agg).reset_index()
+    except Exception:
+        return None
     
+    if grouped.empty:
+        return None
+
     # Apply Top N filtering if requested
-    if top_n and isinstance(top_n, int) and top_n > 0:
+    if top_n and isinstance(top_n, (int, float)) and top_n > 0:
+        top_n = int(top_n)
         grouped = grouped.sort_values(by=y, ascending=False).head(top_n)
         
+    if grouped.empty:
+        return None
+
     fig, ax = plt.subplots()
     ax.pie(grouped[y], labels=grouped[x], autopct='%1.1f%%', startangle=140)
-    ax.set_title(f"{agg.capitalize()} of {y} by {x}" + (f" (Top {top_n})" if top_n else ""))
+    
+    title_suffix = f" (Top {top_n})" if top_n and top_n < len(df.groupby(x)) else ""
+    ax.set_title(f"{str(agg).capitalize()} of {y} by {x}" + title_suffix)
     plt.tight_layout()
     return fig
