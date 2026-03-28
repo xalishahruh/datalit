@@ -127,12 +127,17 @@ def plot_line(df, x, y, rotation=45, date_format=None):
     plt.tight_layout()
     return fig
 
-def plot_grouped_bar(df, x, y, agg="mean", rotation=45):
+def plot_grouped_bar(df, x, y, agg="mean", rotation=45, top_n=None):
     """Used for categorical comparisons."""
     grouped = df.groupby(x)[y].agg(agg).reset_index()
+    
+    # Apply Top N filtering if requested
+    if top_n and isinstance(top_n, int) and top_n > 0:
+        grouped = grouped.sort_values(by=y, ascending=False).head(top_n)
+        
     fig, ax = plt.subplots()
     sns.barplot(data=grouped, x=x, y=y, ax=ax)
-    ax.set_title(f"{agg} of {y} by {x}")
+    ax.set_title(f"{agg} of {y} by {x}" + (f" (Top {top_n})" if top_n else ""))
     ax.set_xlabel(x, labelpad=15)
     ax.set_ylabel(y, labelpad=15)
     
@@ -142,8 +147,13 @@ def plot_grouped_bar(df, x, y, agg="mean", rotation=45):
     plt.tight_layout()
     return fig
 
-def plot_correlation_heatmap(df):
+def plot_correlation_heatmap(df, columns=None):
     """Used for numeric relationships across many columns."""
+    if columns:
+        valid_cols = [c for c in columns if c in df.columns and pd.api.types.is_numeric_dtype(df[c])]
+        if valid_cols:
+            df = df[valid_cols]
+            
     corr = df.select_dtypes(include="number").corr()
     if corr.empty:
         return None
@@ -165,11 +175,16 @@ def plot_area(df, x, y, rotation=45):
     plt.tight_layout()
     return fig
 
-def plot_pie(df, x, y, agg="sum"):
+def plot_pie(df, x, y, agg="sum", top_n=None):
     """Used for part-to-whole categorical breakdown."""
     grouped = df.groupby(x)[y].agg(agg).reset_index()
+    
+    # Apply Top N filtering if requested
+    if top_n and isinstance(top_n, int) and top_n > 0:
+        grouped = grouped.sort_values(by=y, ascending=False).head(top_n)
+        
     fig, ax = plt.subplots()
     ax.pie(grouped[y], labels=grouped[x], autopct='%1.1f%%', startangle=140)
-    ax.set_title(f"{agg.capitalize()} of {y} by {x}")
+    ax.set_title(f"{agg.capitalize()} of {y} by {x}" + (f" (Top {top_n})" if top_n else ""))
     plt.tight_layout()
     return fig

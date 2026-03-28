@@ -146,6 +146,7 @@ with ctrl_col:
             params["x"] = st.selectbox("Category", cat_cols)
             params["y"] = st.selectbox("Metric", num_cols)
             params["agg"] = st.selectbox("Aggregation", ["mean", "sum", "count", "median"])
+            params["top_n"] = st.slider("Show Top N", 1, 100, 10)
         elif chart_type == "Histogram":
             params["column"] = st.selectbox("Numeric Column", num_cols)
             params["bins"] = st.slider("Bins", 5, 100, 20)
@@ -155,6 +156,14 @@ with ctrl_col:
         elif chart_type == "Line Chart":
             params["x"] = st.selectbox("X Axis", df.columns)
             params["y"] = st.selectbox("Y Axis (Metric)", num_cols)
+        elif chart_type == "Area Chart":
+            params["x"] = st.selectbox("X Axis (Dimension/Time)", df.columns)
+            params["y"] = st.selectbox("Y Axis (Metric)", num_cols)
+        elif chart_type == "Pie Chart":
+            params["x"] = st.selectbox("Category (X)", cat_cols if cat_cols else df.columns)
+            params["y"] = st.selectbox("Metric (Y)", num_cols)
+            params["agg"] = st.selectbox("Aggregation", ["sum", "mean", "count", "median"])
+            params["top_n"] = st.slider("Show Top N", 1, 100, 10)
         elif chart_type == "Correlation Heatmap":
             params["selected_cols"] = st.multiselect("Columns", num_cols, default=num_cols[:10])
 
@@ -197,11 +206,11 @@ with plot_col:
             elif chart_type == "Area Chart":
                 fig = plot_area(df_filtered, params["x"], params["y"])
             elif chart_type == "Pie Chart":
-                fig = plot_pie(df_filtered, params["x"], params["y"], params.get("agg", "sum"))
+                fig = plot_pie(df_filtered, params["x"], params["y"], params.get("agg", "sum"), top_n=params.get("top_n"))
             elif chart_type == "Grouped Bar Chart":
-                fig = plot_grouped_bar(df_filtered, params["x"], params["y"], params.get("agg", "mean"))
+                fig = plot_grouped_bar(df_filtered, params["x"], params["y"], params.get("agg", "mean"), top_n=params.get("top_n"))
             elif chart_type == "Correlation Heatmap":
-                fig = plot_correlation_heatmap(df_filtered)
+                fig = plot_correlation_heatmap(df_filtered, params.get("selected_cols"))
             
             if fig:
                 st.pyplot(fig)
@@ -274,11 +283,11 @@ if st.session_state.dashboard_charts:
                 elif saved_type == "Area Chart":
                     f = plot_area(saved_df, saved_params["x"], saved_params["y"])
                 elif saved_type == "Pie Chart":
-                    f = plot_pie(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "sum"))
+                    f = plot_pie(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "sum"), top_n=saved_params.get("top_n"))
                 elif saved_type == "Grouped Bar Chart":
-                    f = plot_grouped_bar(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "mean"))
+                    f = plot_grouped_bar(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "mean"), top_n=saved_params.get("top_n"))
                 elif saved_type == "Correlation Heatmap":
-                    f = plot_correlation_heatmap(saved_df)
+                    f = plot_correlation_heatmap(saved_df, saved_params.get("selected_cols"))
                 
                 if f:
                     st.pyplot(f)
@@ -312,11 +321,11 @@ if st.session_state.dashboard_charts:
                 elif saved_type == "Area Chart":
                     f = plot_area(saved_df, saved_params["x"], saved_params["y"])
                 elif saved_type == "Pie Chart":
-                    f = plot_pie(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "sum"))
+                    f = plot_pie(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "sum"), top_n=saved_params.get("top_n"))
                 elif saved_type == "Grouped Bar Chart":
-                    f = plot_grouped_bar(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "mean"))
+                    f = plot_grouped_bar(saved_df, saved_params["x"], saved_params["y"], saved_params.get("agg", "mean"), top_n=saved_params.get("top_n"))
                 elif saved_type == "Correlation Heatmap":
-                    f = plot_correlation_heatmap(saved_df)
+                    f = plot_correlation_heatmap(saved_df, saved_params.get("selected_cols"))
                 
                 if f:
                     all_charts_bytes.append(export_service.export_as_image(f))
